@@ -1,0 +1,8 @@
+cd backend
+npm run start
+
+cd frontend
+npm run dev
+
+cd ai-service
+uvicorn main:app --reload --port 8000

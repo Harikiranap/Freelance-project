@@ -1,0 +1,188 @@
+import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+import { Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+export default function CompleteProfile() {
+  const [formData, setFormData] = useState({
+    phoneNumber: '',
+    companyName: '',
+    skills: '',
+    portfolioUrl: '',
+    upiId: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { user, login } = useAuth();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Strict validation
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(formData.phoneNumber.trim())) {
+      toast.error('Please enter exactly 10 digits for the phone number (no spaces or country code).');
+      return;
+    }
+
+    if (user?.role === 'client') {
+      if (!formData.companyName.trim()) {
+        toast.error('Please enter your company name.');
+        return;
+      }
+    } else {
+      const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
+      if (!upiRegex.test(formData.upiId.trim())) {
+        toast.error('Please enter a valid UPI ID (e.g., yourname@okicici or yourname@ybl).');
+        return;
+      }
+
+      if (!formData.skills.trim()) {
+        toast.error('Please enter at least one skill.');
+        return;
+      }
+
+      if (!formData.portfolioUrl.trim()) {
+        toast.error('Please enter your portfolio or GitHub URL.');
+        return;
+      }
+    }
+
+    setLoading(true);
+    try {
+      const skillsArray = formData.skills.split(',').map(s => s.trim()).filter(Boolean);
+      const payload = { ...formData, skills: skillsArray, companyName: formData.companyName };
+
+      const res = await axios.put(
+        'http://localhost:5000/api/auth/complete-profile',
+        payload
+        // axios already has the auth header set globally from AuthContext
+      );
+
+      // login() will decode the new token which now has isProfileComplete: true
+      login(res.data.token, res.data);
+
+      // Force full reload to avoid any React Router state race condition with AuthContext
+      toast.success('Profile completed successfully!');
+      window.location.href = '/dashboard';
+    } catch (err) {
+      console.error('CompleteProfile error:', err);
+      toast.error(err.response?.data?.message || 'Failed to save profile. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-[80vh] flex items-center justify-center py-10">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-xl border border-slate-100"
+      >
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">🚀</div>
+          <h2 className="text-3xl font-bold text-slate-900 mb-2">Almost there!</h2>
+          <p className="text-slate-500 text-sm">Complete your {user?.role} profile to get started.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+          <div className="grid md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Phone Number <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                placeholder="10 digits e.g. 9876543210"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+              />
+            </div>
+            
+            {user?.role === 'client' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Company Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  placeholder="Your Company Name"
+                  value={formData.companyName}
+                  onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                />
+              </div>
+            )}
+            
+            {user?.role !== 'client' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Portfolio URL <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="url"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  placeholder="https://github.com/yourname"
+                  value={formData.portfolioUrl}
+                  onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
+                />
+              </div>
+            )}
+          </div>
+
+          {user?.role !== 'client' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Skills <span className="text-red-500">*</span>
+                  <span className="font-normal text-slate-400 ml-1">(comma separated)</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  placeholder="React, Node.js, Python, UI/UX"
+                  value={formData.skills}
+                  onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  UPI ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  placeholder="yourname@okicici"
+                  value={formData.upiId}
+                  onChange={(e) => setFormData({ ...formData, upiId: e.target.value })}
+                />
+                <p className="text-xs text-slate-400 mt-1">🔒 Encrypted with AES-256 before storage</p>
+              </div>
+            </>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 mt-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save & Go to Dashboard →'
+            )}
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
