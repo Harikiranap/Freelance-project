@@ -17,11 +17,13 @@ export default function Auth() {
   
   // Form State
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('client');
   const [error, setError] = useState('');
   const [acceptPolicies, setAcceptPolicies] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   
   // Password Visibility
   const [showPassword, setShowPassword] = useState(false);
@@ -45,11 +47,11 @@ export default function Auth() {
     try {
       if (isLogin) {
         const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
-        login(res.data.token, res.data);
+        login(res.data.token, res.data, rememberMe);
         toast.success('Successfully logged in!');
         window.location.href = '/dashboard';
       } else {
-        const res = await axios.post('http://localhost:5000/api/auth/register', { name, email, password, role });
+        const res = await axios.post('http://localhost:5000/api/auth/register', { name, username, email, password, role });
         toast.success('Verification code sent to your email.');
         navigate('/verify-otp', { state: { email: res.data.email } });
       }
@@ -169,13 +171,23 @@ export default function Auth() {
                       required
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Username</label>
+                    <input 
+                      type="text" 
+                      className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                    />
+                  </div>
                 </>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">{isLogin ? 'Email or Username' : 'Email'}</label>
                 <input 
-                  type="email" 
+                  type="text" 
                   className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -216,6 +228,24 @@ export default function Auth() {
                   <label htmlFor="acceptPolicies" className="text-xs text-slate-500 leading-normal select-none cursor-pointer">
                     I accept the <a href="#" onClick={(e) => { e.preventDefault(); alert("Privacy Policy: Your data is secure and encrypted with WorkSphere."); }} className="text-blue-600 hover:underline font-semibold">Privacy Policy</a> and consent to use cookies for session and payment verification.
                   </label>
+                </div>
+              )}
+
+              {isLogin && (
+                <div className="flex items-center justify-between mt-4 mb-2">
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox"
+                      id="rememberMe"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <label htmlFor="rememberMe" className="text-sm text-slate-600 select-none cursor-pointer">
+                      Remember me
+                    </label>
+                  </div>
+                  <a href="#" className="text-sm font-semibold text-blue-600 hover:underline">Forgot password?</a>
                 </div>
               )}
               

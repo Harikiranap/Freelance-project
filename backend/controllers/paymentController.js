@@ -1,6 +1,8 @@
 const Razorpay = require('razorpay');
 const Payment = require('../models/Payment');
 const Job = require('../models/Job');
+const User = require('../models/User');
+const { sendEmail } = require('../utils/email');
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -15,9 +17,10 @@ exports.createOrder = async (req, res) => {
     if (!job) return res.status(404).json({ message: 'Job not found' });
     if (!job.selectedFreelancer) return res.status(400).json({ message: 'No freelancer selected yet' });
 
-    const totalAmount = job.acceptedPrice || job.budget; // Use agreed bid amount if available
-    const platformFee = totalAmount * 0.05;
-    const freelancerAmount = totalAmount * 0.95;
+    const basePrice = job.acceptedPrice || job.budget; // Use agreed bid amount if available
+    const platformFee = basePrice * 0.02; // 2% platform fee
+    const totalAmount = basePrice + platformFee; // Client pays bid + fee
+    const freelancerAmount = basePrice; // Freelancer receives full bid
 
     // Simulation/Fallback mode if Razorpay credentials are not provided
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
@@ -32,11 +35,11 @@ exports.createOrder = async (req, res) => {
         freelancerAmount,
         status: 'created'
       });
-      return res.json({ isMock: true, order: { id: mockOrderId, amount: totalAmount * 100 }, payment });
+      return res.json({ isMock: true, order: { id: mockOrderId, amount: Math.round(totalAmount * 100) }, payment });
     }
 
     const options = {
-      amount: totalAmount * 100, // Razorpay takes amount in paise (1 INR = 100 paise)
+      amount: Math.round(totalAmount * 100), // Razorpay takes amount in paise (1 INR = 100 paise)
       currency: "INR",
       receipt: `receipt_job_${jobId}`,
     };
@@ -76,6 +79,15 @@ exports.verifyPayment = async (req, res) => {
       job.paymentStatus = 'escrow_funded';
       await job.save();
 
+      const client = await User.findById(req.user.id);
+      if (client) {
+        await sendEmail(
+          client.email,
+          "Payment Receipt - WorkSphere Escrow",
+          `Your payment of INR ${payment.amount} for job "${job.title}" has been securely funded to escrow.`
+        );
+      }
+
       return res.json({ message: 'Mock payment verified successfully and funded to escrow', payment });
     }
 
@@ -92,6 +104,15 @@ exports.verifyPayment = async (req, res) => {
       const job = await Job.findById(payment.job);
       job.paymentStatus = 'escrow_funded';
       await job.save();
+
+      const client = await User.findById(req.user.id);
+      if (client) {
+        await sendEmail(
+          client.email,
+          "Payment Receipt - WorkSphere Escrow",
+          `Your payment of INR ${payment.amount} for job "${job.title}" has been securely funded to escrow.`
+        );
+      }
 
       res.json({ message: 'Payment verified successfully and funded to escrow', payment });
     } else {

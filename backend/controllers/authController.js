@@ -28,11 +28,11 @@ nodemailer.createTestAccount().then(account => {
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role, skills, companyName, upiId } = req.body;
+    const { name, username, email, password, role, skills, companyName, upiId } = req.body;
 
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ $or: [{ email }, { username }] });
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'User with this email or username already exists' });
     }
 
     // Hash password
@@ -48,6 +48,7 @@ exports.register = async (req, res) => {
 
     const user = await User.create({
       name,
+      username,
       email,
       password: hashedPassword,
       role,
@@ -116,7 +117,8 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    // The 'email' field from the frontend can be either email or username
+    const user = await User.findOne({ $or: [{ email }, { username: email }] });
 
     if (user && (await bcrypt.compare(password, user.password))) {
       if (!user.isVerified) {

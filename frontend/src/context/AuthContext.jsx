@@ -22,7 +22,7 @@ const decodeToken = (token) => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [token, setToken] = useState(localStorage.getItem('token') || sessionStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,18 +41,21 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, [token]);
 
-  const login = (newToken, userData) => {
-    localStorage.setItem('token', newToken);
+  const login = (newToken, userData, rememberMe = true) => {
+    if (rememberMe) {
+      localStorage.setItem('token', newToken);
+    } else {
+      sessionStorage.setItem('token', newToken);
+    }
     axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-    // Decode the new token to get fresh user data (including isProfileComplete)
     const decoded = decodeToken(newToken);
-    // Merge userData (has name/email) with decoded token (has isProfileComplete)
     setUser({ ...userData, ...decoded });
     setToken(newToken);
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
     setToken(null);
     setUser(null);

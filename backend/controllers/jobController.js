@@ -6,13 +6,14 @@ const { decrypt } = require('../utils/crypto');
 
 exports.createJob = async (req, res) => {
   try {
-    const { title, description, budget, skills } = req.body;
+    const { title, description, budget, skills, category } = req.body;
     const job = await Job.create({
       client: req.user.id,
       title,
       description,
       budget,
-      skills
+      skills,
+      category
     });
     res.status(201).json(job);
   } catch (error) {
@@ -22,7 +23,7 @@ exports.createJob = async (req, res) => {
 
 exports.getJobs = async (req, res) => {
   try {
-    const jobs = await Job.find({ status: 'open' }).populate('client', 'name companyName');
+    const jobs = await Job.find({ status: 'open', isApproved: true }).populate('client', 'name companyName');
     res.json(jobs);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -158,7 +159,12 @@ exports.acceptBid = async (req, res) => {
 exports.deliverJob = async (req, res) => {
   try {
     const { jobId } = req.params;
+    const { deliverableLink } = req.body;
     
+    if (!deliverableLink) {
+      return res.status(400).json({ message: 'Deliverable link is required.' });
+    }
+
     const job = await Job.findById(jobId);
     if (!job) {
       return res.status(404).json({ message: 'Job not found' });
@@ -174,9 +180,39 @@ exports.deliverJob = async (req, res) => {
     }
 
     job.status = 'delivered';
+    job.deliverableLink = deliverableLink;
     await job.save();
 
-    res.json({ message: 'Job delivered successfully, pending client review', job });
+    res.json({ message: 'Work delivered successfully, pending client review', job });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getJobById = async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.jobId)
+      .populate('client', 'name email companyName')
+      .populate('selectedFreelancer', 'name email skills rating portfolioUrl experience location');
+    if (!job) return res.status(404).json({ message: 'Job not found' });
+    res.json(job);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.approveJob = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized, admin only' });
+    }
+    const { jobId } = req.params;
+    const job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ message: 'Job not found' });
+    
+    job.isApproved = true;
+    await job.save();
+    res.json({ message: 'Job approved successfully', job });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

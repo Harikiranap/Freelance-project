@@ -15,6 +15,7 @@ const CompleteProfile = lazy(() => import('./pages/CompleteProfile'));
 const EditProfile = lazy(() => import('./pages/EditProfile'));
 const AboutUs = lazy(() => import('./pages/AboutUs'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const PaymentPage = lazy(() => import('./pages/PaymentPage'));
 
 function AppNav() {
   const { user, logout } = useAuth();
@@ -166,6 +167,10 @@ function AppRoutes() {
           <Route 
             path="/chat" 
             element={<ProtectedRoute><div className="max-w-7xl mx-auto px-4 py-8"><Chat /></div></ProtectedRoute>} 
+          />
+          <Route 
+            path="/payment/:jobId" 
+            element={<ProtectedRoute><div className="max-w-7xl mx-auto px-4 py-8"><PaymentPage /></div></ProtectedRoute>} 
           />
 
           {/* Admin Routes */}

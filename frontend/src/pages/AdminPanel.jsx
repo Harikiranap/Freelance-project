@@ -44,6 +44,18 @@ export default function AdminPanel() {
     }
   };
 
+  const approveJob = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`http://localhost:5000/api/jobs/${id}/approve`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchStats();
+    } catch (err) {
+      alert("Failed to approve job");
+    }
+  };
+
   const approveFreelancer = async (id) => {
     try {
       const token = localStorage.getItem('token');
@@ -160,12 +172,29 @@ export default function AdminPanel() {
             {stats.jobs.map(j => (
               <div key={j._id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                 <div>
-                  <p className="font-semibold text-slate-900">{j.title}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-slate-900">{j.title}</p>
+                    {j.isApproved ? (
+                      <span className="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Approved</span>
+                    ) : (
+                      <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Pending</span>
+                    )}
+                  </div>
                   <p className="text-xs text-slate-500">{j.client?.name} • ₹{j.budget}</p>
                 </div>
-                <button onClick={() => deleteJob(j._id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                  <Trash2 size={18} />
-                </button>
+                <div className="flex items-center gap-2">
+                  {!j.isApproved && (
+                    <button 
+                      onClick={() => approveJob(j._id)} 
+                      className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                      Approve
+                    </button>
+                  )}
+                  <button onClick={() => deleteJob(j._id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
