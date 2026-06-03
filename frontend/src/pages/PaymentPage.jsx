@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { Loader2, ArrowLeft, ShieldCheck, CreditCard, CheckCircle2, FileText, User, Briefcase, Calendar, Star, Building } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
+import Avatar from '../components/Avatar';
 
 // Helper to dynamically load Razorpay checkout SDK
 const loadRazorpayScript = () => {
@@ -230,9 +231,7 @@ export default function PaymentPage() {
               {/* Client Profile */}
               <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center font-bold overflow-hidden">
-                    <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(clientName)}&background=random`} alt={clientName} className="w-full h-full object-cover" />
-                  </div>
+                  <Avatar name={clientName} size={40} className="border-blue-100 text-blue-600" />
                   <div>
                     <h4 className="font-bold text-sm text-slate-800 truncate">{clientName}</h4>
                     <p className="text-[10px] text-slate-400 font-semibold uppercase">{clientCompany}</p>
@@ -247,9 +246,7 @@ export default function PaymentPage() {
               {/* Freelancer Profile */}
               <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-bold overflow-hidden">
-                    <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(freelancerName)}&background=random`} alt={freelancerName} className="w-full h-full object-cover" />
-                  </div>
+                  <Avatar name={freelancerName} size={40} className="border-indigo-100 text-indigo-600" />
                   <div>
                     <h4 className="font-bold text-sm text-slate-800 truncate">{freelancerName}</h4>
                     <p className="text-[10px] text-slate-400 font-semibold uppercase">Verified Freelancer</p>
