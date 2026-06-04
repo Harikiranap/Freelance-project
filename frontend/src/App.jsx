@@ -6,8 +6,8 @@ import { Toaster } from 'react-hot-toast';
 import Loading from './components/Loading';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Avatar from './components/Avatar';
+import AuthModal from './components/AuthModal';
 const Home = lazy(() => import('./pages/Home'));
-const Auth = lazy(() => import('./pages/Auth'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Chat = lazy(() => import('./pages/Chat'));
 const VerifyOtp = lazy(() => import('./pages/VerifyOtp'));
@@ -18,7 +18,7 @@ const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const PaymentPage = lazy(() => import('./pages/PaymentPage'));
 
 function AppNav() {
-  const { user, logout } = useAuth();
+  const { user, logout, openAuth } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -44,30 +44,30 @@ function AppNav() {
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link to="/">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="text-2xl font-extrabold text-blue-600 tracking-tight cursor-pointer">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="text-2xl font-extrabold text-violet-600 tracking-tight cursor-pointer">
               WorkSphere
             </motion.div>
           </Link>
           <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-            <Link to="/" className="hover:text-blue-600 transition-colors">Home</Link>
-            <Link to="/about" className="hover:text-blue-600 transition-colors">About Us</Link>
-            {user && <Link to="/dashboard" className="hover:text-blue-600 transition-colors">Jobs</Link>}
-            {user && <Link to="/chat" className="hover:text-blue-600 transition-colors">Messages</Link>}
+            <Link to="/" className="hover:text-violet-600 transition-colors">Home</Link>
+            <Link to="/about" className="hover:text-violet-600 transition-colors">About Us</Link>
+            {user && <Link to="/dashboard" className="hover:text-violet-600 transition-colors">Jobs</Link>}
+            {user && <Link to="/chat" className="hover:text-violet-600 transition-colors">Messages</Link>}
           </div>
         </div>
 
         <div className="flex items-center gap-4">
           {!user ? (
-            <Link to="/login" className="text-sm font-semibold px-6 py-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all shadow-md hover:shadow-lg">
+            <button onClick={() => openAuth('login')} className="text-sm font-semibold px-6 py-2.5 bg-violet-600 text-white rounded-full hover:bg-violet-700 transition-all shadow-md hover:shadow-lg">
               Sign In / Join
-            </Link>
+            </button>
           ) : (
             <div className="relative" ref={dropdownRef}>
               <button 
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 hover:bg-slate-50 transition-colors"
               >
-                <Avatar name={user.name || 'User'} size={32} />
+                <Avatar name={user.name} size={32} />
                 <ChevronDown size={16} className="text-slate-400" />
               </button>
 
@@ -90,7 +90,7 @@ function AppNav() {
                       </Link>
                       
                       {user.role === 'admin' && (
-                        <Link to="/admin" onClick={() => setDropdownOpen(false)} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
+                        <Link to="/admin" onClick={() => setDropdownOpen(false)} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-violet-700 hover:bg-violet-50 rounded-lg transition-colors">
                           <ShieldCheck size={16} /> Admin Panel
                         </Link>
                       )}
@@ -114,12 +114,20 @@ function AppNav() {
 
 // Protected Route Wrapper
 function ProtectedRoute({ children, requireCompleteProfile = true }) {
-  const { user, loading } = useAuth();
+  const { user, loading, openAuth } = useAuth();
+  const navigate = useNavigate();
   
+  useEffect(() => {
+    if (!loading && !user) {
+      openAuth('login');
+      navigate('/', { replace: true });
+    }
+  }, [user, loading, openAuth, navigate]);
+
   if (loading) return <Loading />;
   
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return null;
   }
 
   // If user hasn't completed their profile, redirect to complete-profile
@@ -145,8 +153,6 @@ function AppRoutes() {
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<AboutUs />} />
-          <Route path="/login" element={<Auth />} />
-          <Route path="/register" element={<Auth />} />
           <Route path="/verify-otp" element={<VerifyOtp />} />
           
           {/* Semi-Protected (Requires auth, but not completed profile) */}
@@ -212,7 +218,7 @@ function CookieBanner() {
         <p className="text-xs text-slate-400 mt-1">We use cookies to optimize your platform experience, verify user sessions, and secure escrow payments.</p>
       </div>
       <div className="flex gap-2 justify-end">
-        <button onClick={handleAccept} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors">
+        <button onClick={handleAccept} className="px-4 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors">
           Accept All
         </button>
       </div>
@@ -248,6 +254,7 @@ function App() {
         />
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
           <AppNav />
+          <AuthModal />
           <AppRoutes />
           <CookieBanner />
         </div>

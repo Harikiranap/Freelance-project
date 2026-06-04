@@ -1,11 +1,12 @@
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { ShieldCheck, Zap, Lock, ArrowRight, Briefcase, Calculator, Award, Sparkles, TrendingUp, Users, ChevronRight, Video, FileText, MonitorPlay, MessageSquare, CheckCircle2, Star } from 'lucide-react';
+import { ShieldCheck, Zap, Lock, ArrowRight, Briefcase, Calculator, Award, Sparkles, MonitorPlay, FileText, ChevronRight, Video, CheckCircle2, Star, Target, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import PolicyModal from '../components/PolicyModal';
 
-// Custom 3D Particle Mesh Canvas Component
+// Enhanced 3D Canvas Mesh
 function InteractiveMesh() {
   const canvasRef = useRef(null);
 
@@ -19,37 +20,35 @@ function InteractiveMesh() {
     let height = (canvas.height = canvas.offsetHeight);
 
     const particles = [];
-    const maxParticles = 60;
-    const connectionDist = 120;
-    const mouse = { x: null, y: null, radius: 150 };
+    const maxParticles = 80;
+    const connectionDist = 150;
+    const mouse = { x: null, y: null, radius: 200 };
 
     class Particle {
       constructor() {
         this.x = Math.random() * width;
         this.y = Math.random() * height;
-        this.vx = (Math.random() - 0.5) * 0.8;
-        this.vy = (Math.random() - 0.5) * 0.8;
-        this.radius = Math.random() * 2.5 + 1.5;
+        this.vx = (Math.random() - 0.5) * 1.5;
+        this.vy = (Math.random() - 0.5) * 1.5;
+        this.radius = Math.random() * 3 + 1;
+        this.baseColor = Math.random() > 0.5 ? 'rgba(99, 102, 241,' : 'rgba(236, 72, 153,'; // Indigo or Pink
       }
 
       update() {
-        // Bounce off walls
         if (this.x < 0 || this.x > width) this.vx *= -1;
         if (this.y < 0 || this.y > height) this.vy *= -1;
 
-        // Move
         this.x += this.vx;
         this.y += this.vy;
 
-        // Mouse interaction (push away gently)
         if (mouse.x !== null && mouse.y !== null) {
           const dx = this.x - mouse.x;
           const dy = this.y - mouse.y;
           const dist = Math.hypot(dx, dy);
           if (dist < mouse.radius) {
             const force = (mouse.radius - dist) / mouse.radius;
-            this.x += (dx / dist) * force * 2;
-            this.y += (dy / dist) * force * 2;
+            this.x += (dx / dist) * force * 3;
+            this.y += (dy / dist) * force * 3;
           }
         }
       }
@@ -57,64 +56,41 @@ function InteractiveMesh() {
       draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(37, 99, 235, 0.45)'; // Soft blue
+        ctx.fillStyle = `${this.baseColor} 0.6)`;
         ctx.fill();
+        
+        // Add a subtle glow
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = `${this.baseColor} 0.8)`;
       }
     }
 
-    // Initialize
-    for (let i = 0; i < maxParticles; i++) {
-      particles.push(new Particle());
-    }
+    for (let i = 0; i < maxParticles; i++) particles.push(new Particle());
 
     const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       mouse.x = e.clientX - rect.left;
       mouse.y = e.clientY - rect.top;
     };
-
-    const handleMouseLeave = () => {
-      mouse.x = null;
-      mouse.y = null;
-    };
+    const handleMouseLeave = () => { mouse.x = null; mouse.y = null; };
 
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseleave', handleMouseLeave);
-
-    const handleResize = () => {
+    window.addEventListener('resize', () => {
       if (!canvas) return;
       width = canvas.width = canvas.offsetWidth;
       height = canvas.height = canvas.offsetHeight;
-    };
-    window.addEventListener('resize', handleResize);
+    });
 
     const animate = () => {
       ctx.clearRect(0, 0, width, height);
+      ctx.shadowBlur = 0; // Reset shadow for lines
 
-      // Draw grids/isometric lines in background
-      ctx.strokeStyle = 'rgba(226, 232, 240, 0.35)';
-      ctx.lineWidth = 0.5;
-      const gridSize = 60;
-      for (let x = 0; x < width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-      }
-
-      // Update & Draw particles
       particles.forEach((p) => {
         p.update();
         p.draw();
       });
 
-      // Draw lines between close particles
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
@@ -122,25 +98,22 @@ function InteractiveMesh() {
           const dist = Math.hypot(dx, dy);
 
           if (dist < connectionDist) {
-            const alpha = (1 - dist / connectionDist) * 0.18;
+            const alpha = (1 - dist / connectionDist) * 0.25;
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`; // Indigo lines
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = `rgba(139, 92, 246, ${alpha})`; // Violet connections
+            ctx.lineWidth = 1.5;
             ctx.stroke();
           }
         }
       }
-
       animationId = requestAnimationFrame(animate);
     };
 
     animate();
-
     return () => {
       cancelAnimationFrame(animationId);
-      window.removeEventListener('resize', handleResize);
       if (canvas) {
         canvas.removeEventListener('mousemove', handleMouseMove);
         canvas.removeEventListener('mouseleave', handleMouseLeave);
@@ -148,25 +121,73 @@ function InteractiveMesh() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-auto" />;
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-auto opacity-60 mix-blend-multiply" />;
+}
+
+// 3D Tilt Card Component
+function TiltCard({ children, className }) {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const mouseXSpring = useSpring(x);
+  const mouseYSpring = useSpring(y);
+
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"]);
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const xPct = mouseX / width - 0.5;
+    const yPct = mouseY / height - 0.5;
+    x.set(xPct);
+    y.set(yPct);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className={`perspective-1000 ${className}`}
+    >
+      <div style={{ transform: "translateZ(30px)" }} className="w-full h-full">
+        {children}
+      </div>
+    </motion.div>
+  );
 }
 
 export default function Home() {
+  const [activePolicy, setActivePolicy] = useState(null);
   const [jobs, setJobs] = useState([]);
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Pricing Estimator State
   const [estimateCategory, setEstimateCategory] = useState('Web Design');
   const [estimateBudget, setEstimateBudget] = useState(40000);
-  const platformFee = Math.round(estimateBudget * 0.02);
+  const platformFee = Math.round(estimateBudget * 0.05);
   const totalInvoice = estimateBudget + platformFee;
+
+  const policyData = {
+    privacy: { type: 'privacy', title: 'Privacy Policy', content: "Your privacy is important..." },
+    terms: { type: 'terms', title: 'Terms of Service', content: "By accessing WorkSphere..." },
+    escrow: { type: 'escrow', title: 'Escrow Guidelines', content: "Our escrow system guarantees safety..." }
+  };
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         const res = await axios.get('http://localhost:5000/api/jobs');
-        setJobs(res.data.slice(0, 3)); // Only show top 3 jobs as preview
+        setJobs(res.data.slice(0, 3));
       } catch (err) {
         console.error("Failed to load jobs");
       }
@@ -174,148 +195,216 @@ export default function Home() {
     fetchJobs();
   }, []);
 
-  const handleJobClick = () => {
-    if (!user) {
-      navigate('/login');
-    } else {
-      navigate('/dashboard');
-    }
-  };
-
   const categoriesData = [
-    { name: 'Web Design', icon: <Briefcase className="text-blue-600" size={20} />, desc: 'Next.js, Tailwind layouts, landing pages, and interactive WebGL assets.', count: '140+ Projects' },
-    { name: 'Video Editing', icon: <Video className="text-indigo-600" size={20} />, desc: 'SaaS promos, corporate reviews, color grading, SFX, and product tutorials.', count: '85+ Projects' },
-    { name: 'Reels Making', icon: <MonitorPlay className="text-purple-600" size={20} />, desc: 'High retention captions, fast-paced transitions, TikTok, and YouTube Shorts.', count: '220+ Projects' },
-    { name: 'Copywriting', icon: <FileText className="text-emerald-600" size={20} />, desc: 'High-converting ad copies, landing pages, sales sequences, and blogs.', count: '95+ Projects' },
+    { name: 'Web Design', icon: <Briefcase size={24} />, desc: 'Next.js, Tailwind layouts, and interactive WebGL assets.', count: '140+ Projects', color: 'from-blue-500 to-indigo-500' },
+    { name: 'Video Editing', icon: <Video size={24} />, desc: 'SaaS promos, corporate reviews, color grading, and SFX.', count: '85+ Projects', color: 'from-fuchsia-500 to-pink-500' },
+    { name: 'Reels Making', icon: <MonitorPlay size={24} />, desc: 'High retention captions, fast-paced transitions, TikTok.', count: '220+ Projects', color: 'from-violet-500 to-purple-500' },
+    { name: 'Copywriting', icon: <FileText size={24} />, desc: 'High-converting ad copies, sales sequences, and blogs.', count: '95+ Projects', color: 'from-emerald-500 to-teal-500' },
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 text-slate-800 selection:bg-blue-600 selection:text-white">
+    <div className="flex flex-col min-h-screen bg-[#f8fafc] text-slate-800 overflow-hidden font-sans">
       
-      {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center py-20 px-4 overflow-hidden border-b border-slate-100 bg-gradient-to-b from-blue-50/50 via-white to-slate-50">
+      {/* 1. Hero Section with 3D Elements */}
+      <section className="relative min-h-screen flex items-center justify-center pt-20 pb-32 px-4 bg-grid-pattern overflow-hidden">
+        {/* Glow behind hero */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet-300/30 rounded-full blur-[120px] pointer-events-none"></div>
         
-        {/* Interactive 3D particle node network background */}
         <InteractiveMesh />
         
-        {/* Futuristic Glowing light-theme shapes */}
-        <div className="absolute top-1/4 left-1/10 w-72 h-72 bg-gradient-to-tr from-blue-400/10 to-indigo-400/10 rounded-full blur-3xl opacity-60 animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/10 w-96 h-96 bg-gradient-to-tr from-purple-400/10 to-pink-400/10 rounded-full blur-3xl opacity-60 animate-pulse animation-delay-2000"></div>
+        {/* Floating 3D Orbs/Elements */}
+        <div className="absolute top-32 left-20 animate-float">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-violet-500 to-fuchsia-500 blur-sm opacity-80 shadow-[0_0_50px_rgba(139,92,246,0.6)]"></div>
+        </div>
+        <div className="absolute bottom-40 right-20 animate-float-delayed">
+          <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 blur-sm opacity-70 shadow-[0_0_50px_rgba(56,189,248,0.6)]"></div>
+        </div>
 
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="relative z-10 max-w-5xl space-y-8"
-        >
-          {/* Tagline */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 border border-slate-200/80 shadow-md backdrop-blur-sm">
-            <Sparkles className="text-blue-500" size={14} />
-            <span className="text-xs font-bold text-slate-700 tracking-wide uppercase">Decentralized Escrow Talent Portal</span>
-          </div>
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center relative z-10 w-full">
+          <motion.div 
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="space-y-8"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel text-sm font-bold text-violet-700 shadow-sm backdrop-blur-xl">
+              <Sparkles size={16} className="text-fuchsia-500" />
+              <span>Decentralized Escrow Talent Portal</span>
+            </div>
 
-          <h1 className="text-5xl md:text-8xl font-black text-slate-900 tracking-tight leading-none">
-            Where elite talent <br />
-            meets <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">frictionless trust.</span>
-          </h1>
-          
-          <p className="text-lg md:text-xl text-slate-500 max-w-3xl mx-auto font-medium leading-relaxed">
-            WorkSphere connects top-tier designers, creators, and marketers. Secured by automated digital contracts, 2% platform fees, and real-time bank escrow vaults.
-          </p>
-          
-          <div className="flex flex-wrap justify-center gap-4 pt-4">
-            <Link to="/register" className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-xl hover:shadow-blue-500/20 transition-all transform hover:-translate-y-1 flex items-center gap-2">
-              Start Hiring <ArrowRight size={18} />
-            </Link>
-            <Link to="/register" className="px-8 py-4 bg-white text-slate-800 rounded-2xl font-bold shadow-lg border border-slate-200 hover:bg-slate-100/80 transition-all transform hover:-translate-y-1">
-              Find Freelance Work
-            </Link>
-          </div>
-        </motion.div>
+            <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tight leading-[1.1]">
+              Where elite talent <br />
+              meets <span className="text-gradient">frictionless trust.</span>
+            </h1>
+            
+            <p className="text-lg md:text-xl text-slate-600 max-w-xl font-medium leading-relaxed">
+              WorkSphere connects top-tier designers, creators, and marketers. Secured by automated digital contracts and real-time bank escrow vaults.
+            </p>
+            
+            <div className="flex flex-wrap gap-4 pt-4">
+              <Link to="/dashboard" className="px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-xl shadow-slate-900/20 transition-all transform hover:-translate-y-1 flex items-center gap-2 group">
+                Start Hiring <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link to="/dashboard" className="px-8 py-4 glass-panel text-slate-800 rounded-2xl font-bold hover:bg-white/80 transition-all transform hover:-translate-y-1">
+                Find Freelance Work
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* 3D Hero Visual Element */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8, rotateY: 15 }}
+            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="hidden lg:block relative perspective-1000"
+          >
+            <TiltCard className="w-full max-w-md mx-auto">
+              <div className="glass-panel p-8 rounded-[2rem] shadow-2xl relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/10 z-0"></div>
+                <div className="relative z-10 space-y-6">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-violet-500 to-fuchsia-500 p-[2px]">
+                        <div className="w-full h-full bg-white rounded-full flex items-center justify-center font-bold text-violet-600">WS</div>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900">Secure Escrow</h4>
+                        <p className="text-xs text-slate-500">Contract #4092</p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">Funded</span>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: "0%" }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: 2, delay: 1 }}
+                        className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs font-bold text-slate-400">
+                      <span>Initiated</span>
+                      <span className="text-violet-600">Milestone 1 Complete</span>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-white/60 rounded-xl border border-white/50 backdrop-blur-md">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-semibold text-slate-600">Total Value</span>
+                      <span className="text-lg font-black text-slate-900">₹85,000</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400">Funds secured in Razorpay Vault</p>
+                  </div>
+                </div>
+              </div>
+            </TiltCard>
+          </motion.div>
+        </div>
       </section>
 
-      {/* Categories & Freelance Marketing focus */}
-      <section className="py-24 bg-white relative z-10 border-b border-slate-100">
+      {/* 2. Core Disciplines (3D Glass Grid) */}
+      <section className="py-32 relative z-10 bg-white">
         <div className="max-w-7xl mx-auto px-4">
-          
-          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <span className="text-xs font-extrabold text-blue-600 tracking-widest uppercase bg-blue-50 px-3 py-1 rounded-full">Core Disciplines</span>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Harness elite creative and tech categories</h2>
-            <p className="text-slate-500">Every project is secured with automatic payments escrowed before the deliverables begin.</p>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            className="text-center max-w-3xl mx-auto mb-20 space-y-4"
+          >
+            <span className="text-sm font-bold text-violet-600 tracking-widest uppercase">Core Disciplines</span>
+            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Harness elite creative and tech</h2>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {categoriesData.map((cat, idx) => (
               <motion.div
                 key={cat.name}
-                whileHover={{ y: -6, scale: 1.01 }}
-                transition={{ type: 'spring', stiffness: 300 }}
-                className="p-6 bg-slate-50/50 hover:bg-white rounded-3xl border border-slate-200/60 hover:shadow-xl transition-all flex flex-col justify-between"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                whileHover={{ y: -10, scale: 1.02 }}
+                className="group relative p-1 rounded-3xl bg-gradient-to-b from-slate-100 to-white shadow-lg hover:shadow-2xl hover:shadow-violet-500/10 transition-all duration-300"
               >
-                <div className="space-y-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
-                    {cat.icon}
+                <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-10 transition-opacity rounded-3xl z-0 pointer-events-none" style={{ backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }} className={cat.color}></div>
+                <div className="bg-white h-full w-full rounded-[23px] p-6 flex flex-col justify-between relative z-10 border border-slate-100">
+                  <div className="space-y-4">
+                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${cat.color} text-white flex items-center justify-center shadow-md transform group-hover:rotate-12 transition-transform duration-300`}>
+                      {cat.icon}
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900">{cat.name}</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed">{cat.desc}</p>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-800">{cat.name}</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed font-normal">{cat.desc}</p>
-                </div>
-                <div className="mt-6 flex justify-between items-center text-xs font-semibold text-slate-400">
-                  <span>{cat.count}</span>
-                  <ChevronRight size={16} />
+                  <div className="mt-8 flex justify-between items-center text-sm font-semibold text-slate-400 group-hover:text-violet-600 transition-colors">
+                    <span>{cat.count}</span>
+                    <ChevronRight size={18} className="transform group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </div>
               </motion.div>
             ))}
           </div>
-
         </div>
       </section>
 
-      {/* Live Jobs Preview Section */}
-      <section className="py-24 bg-slate-50/50 relative z-10 border-b border-slate-100">
+      {/* 3. Live Jobs Preview (Floating Cards) */}
+      <section className="py-32 bg-slate-50 relative z-10">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-12 gap-4">
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full">Active Board</span>
-              <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Vetted opportunities in market</h2>
-              <p className="text-slate-500">Apply to live freelance jobs posted by verified firms.</p>
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="flex flex-col md:flex-row items-start md:items-end justify-between mb-16 gap-4"
+          >
+            <div className="space-y-3">
+              <span className="text-sm font-bold text-fuchsia-600 uppercase tracking-widest">Active Board</span>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Vetted opportunities in market</h2>
             </div>
-            <Link to={user ? "/dashboard" : "/login"} className="text-blue-600 font-bold hover:text-blue-700 flex items-center gap-1.5 bg-white border border-slate-200 shadow-sm px-4 py-2.5 rounded-xl text-sm transition-all hover:shadow-md">
-              View All Projects <ArrowRight size={16} />
+            <Link to={user ? "/dashboard" : "/login"} className="group text-slate-900 font-bold flex items-center gap-2 bg-white border-2 border-slate-900 px-6 py-3 rounded-full text-sm transition-all hover:bg-slate-900 hover:text-white">
+              View All Projects <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </Link>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {jobs.length > 0 ? jobs.map(job => (
+          <div className="grid md:grid-cols-3 gap-8 perspective-1000">
+            {jobs.length > 0 ? jobs.map((job, idx) => (
               <motion.div 
-                whileHover={{ y: -5 }}
+                initial={{ opacity: 0, rotateX: 10, y: 50 }}
+                whileInView={{ opacity: 1, rotateX: 0, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.15, type: "spring" }}
+                whileHover={{ y: -10, rotateX: 5, rotateY: -5 }}
                 key={job._id} 
-                className="bg-white p-6 rounded-3xl border border-slate-200/70 shadow-sm cursor-pointer group hover:shadow-xl transition-all flex flex-col justify-between min-h-[220px]"
-                onClick={handleJobClick}
+                className="glass-panel p-8 rounded-3xl cursor-pointer group flex flex-col justify-between min-h-[260px] transform-gpu transition-shadow hover:shadow-2xl hover:shadow-fuchsia-500/10"
+                onClick={() => navigate(user ? "/dashboard" : "/login")}
               >
                 <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-[10px] font-bold px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full uppercase tracking-wider">
+                  <div className="flex justify-between items-start mb-6">
+                    <span className="text-xs font-bold px-3 py-1.5 bg-violet-100 text-violet-700 rounded-full uppercase tracking-wider shadow-inner">
                       {job.category || 'Freelance'}
                     </span>
-                    <span className="text-base font-extrabold text-slate-900">₹{job.budget.toLocaleString('en-IN')}</span>
+                    <span className="text-xl font-black text-slate-900">₹{job.budget.toLocaleString('en-IN')}</span>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors line-clamp-1">{job.title}</h3>
-                  <p className="text-slate-500 text-xs leading-relaxed line-clamp-3 mb-4">{job.description}</p>
+                  <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-violet-600 group-hover:to-fuchsia-600 transition-all line-clamp-2">{job.title}</h3>
+                  <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-6">{job.description}</p>
                 </div>
-                <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
-                  <span className="text-[10px] text-slate-400 font-semibold">{job.client?.companyName || 'Verified Client'}</span>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded">
+                <div className="flex items-center justify-between mt-auto pt-6 border-t border-slate-200/50">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center"><Globe size={12} className="text-slate-500"/></div>
+                    <span className="text-xs text-slate-600 font-semibold">{job.client?.companyName || 'Verified Client'}</span>
+                  </div>
+                  <span className="text-[10px] font-bold px-3 py-1 bg-slate-900 text-white rounded-full">
                     {job.skillsRequired && job.skillsRequired[0] ? job.skillsRequired[0] : 'React'}
                   </span>
                 </div>
               </motion.div>
             )) : (
               [1, 2, 3].map(i => (
-                <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 h-52 animate-pulse">
-                  <div className="w-10 h-10 bg-slate-100 rounded-lg mb-4"></div>
-                  <div className="h-6 bg-slate-100 rounded w-3/4 mb-4"></div>
-                  <div className="h-4 bg-slate-100 rounded w-full mb-2"></div>
-                  <div className="h-4 bg-slate-100 rounded w-2/3"></div>
+                <div key={i} className="glass-panel p-8 rounded-3xl h-64 animate-pulse flex flex-col justify-between">
+                  <div>
+                    <div className="w-20 h-6 bg-slate-200/50 rounded-full mb-6"></div>
+                    <div className="h-6 bg-slate-200/50 rounded w-3/4 mb-4"></div>
+                    <div className="h-4 bg-slate-200/50 rounded w-full mb-2"></div>
+                  </div>
+                  <div className="h-10 bg-slate-200/50 rounded w-full"></div>
                 </div>
               ))
             )}
@@ -323,213 +412,210 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Interactive Platform Fee & Cost Estimator Widget */}
-      <section className="py-24 bg-white relative z-10 border-b border-slate-100">
+      {/* 4. Interactive Widget Section */}
+      <section className="py-32 bg-white relative z-10 overflow-hidden">
+        {/* Decorative background circle */}
+        <div className="absolute top-1/2 right-0 -translate-y-1/2 w-1/2 h-[800px] bg-gradient-to-bl from-blue-50 to-transparent rounded-l-full pointer-events-none"></div>
+
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             
-            {/* Widget Copy */}
-            <div className="lg:col-span-6 space-y-6">
-              <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full">Transparent Pricing</span>
-              <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                No hidden fees. <br />Only a <span className="text-blue-600 font-black">2.0% platform fee</span>.
+            <motion.div 
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-8 relative z-10"
+            >
+              <span className="text-sm font-bold text-blue-600 uppercase tracking-widest">Transparent Pricing</span>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                No hidden fees. <br />Only a <span className="text-gradient">5.0% platform fee</span>.
               </h2>
-              <p className="text-slate-500 leading-relaxed font-medium">
-                We believe in extreme pricing transparency. Clients pay a flat 2.0% facilitation fee on top of the freelancer's agreed bid to secure the bank escrow, while the freelancer receives 100% of their proposal quote.
+              <p className="text-lg text-slate-600 leading-relaxed font-medium max-w-lg">
+                Clients pay a flat 5.0% facilitation fee to secure the bank escrow, while the freelancer receives 100% of their proposal quote. Pure transparency.
               </p>
               
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><CheckCircle2 size={12} /></div>
-                  <span className="text-sm font-semibold text-slate-700">Funds released only after milestone approval</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><CheckCircle2 size={12} /></div>
-                  <span className="text-sm font-semibold text-slate-700">Digital receipt generation with tax itemization</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><CheckCircle2 size={12} /></div>
-                  <span className="text-sm font-semibold text-slate-700">Razorpay secure integration & payment simulation</span>
-                </div>
+              <div className="space-y-5 pt-4">
+                {[
+                  "Funds released only after milestone approval",
+                  "Digital receipt generation with tax itemization",
+                  "Razorpay secure integration & payment simulation"
+                ].map((text, i) => (
+                  <motion.div 
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 + 0.3 }}
+                    className="flex items-center gap-4"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 shadow-sm"><CheckCircle2 size={16} /></div>
+                    <span className="text-base font-semibold text-slate-800">{text}</span>
+                  </motion.div>
+                ))}
               </div>
-            </div>
+            </motion.div>
 
-            {/* Interactive Calculator Widget */}
-            <div className="lg:col-span-6">
-              <motion.div 
-                whileHover={{ y: -3 }}
-                className="bg-slate-50 p-8 rounded-3xl border border-slate-200/80 shadow-2xl relative overflow-hidden"
-              >
-                {/* Visual grid background details */}
-                <div className="absolute inset-0 bg-grid-slate-100 opacity-20 pointer-events-none"></div>
-
-                <div className="relative z-10 space-y-6">
-                  <h3 className="text-xl font-extrabold text-slate-950 flex items-center gap-2">
-                    <Calculator className="text-blue-600" size={20} /> Fee Estimator
-                  </h3>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative perspective-1000"
+            >
+              <TiltCard>
+                <div className="glass-panel p-10 rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.08)] relative overflow-hidden border-2 border-white/60">
+                  <div className="absolute -top-32 -right-32 w-64 h-64 bg-violet-400/20 rounded-full blur-3xl pointer-events-none"></div>
                   
-                  {/* Category Dropdown */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Project Category</label>
-                    <select 
-                      value={estimateCategory} 
-                      onChange={(e) => setEstimateCategory(e.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-slate-700 text-sm"
-                    >
-                      <option value="Web Design">Web Design & Dev</option>
-                      <option value="Video Editing">Video Editing</option>
-                      <option value="Reels Making">Reels & TikTok Editing</option>
-                      <option value="Copywriting">Copywriting & Blogs</option>
-                      <option value="Digital Marketing">Digital Marketing Campaigns</option>
-                      <option value="SEO Optimization">SEO & Technical Audits</option>
-                    </select>
-                  </div>
+                  <div className="relative z-10 space-y-8">
+                    <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                      <div className="p-2 bg-violet-100 text-violet-600 rounded-xl"><Calculator size={24} /></div>
+                      Fee Estimator
+                    </h3>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Project Category</label>
+                        <select 
+                          value={estimateCategory} 
+                          onChange={(e) => setEstimateCategory(e.target.value)}
+                          className="w-full px-5 py-4 bg-white/80 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-violet-500 font-bold text-slate-800 shadow-sm transition-colors cursor-pointer appearance-none"
+                        >
+                          <option value="Web Design">Web Design & Dev</option>
+                          <option value="Video Editing">Video Editing</option>
+                          <option value="Reels Making">Reels & TikTok Editing</option>
+                          <option value="Copywriting">Copywriting & Blogs</option>
+                        </select>
+                      </div>
 
-                  {/* Budget Slider */}
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Freelancer Proposal Bid</label>
-                      <span className="font-extrabold text-blue-600 text-base">₹{estimateBudget.toLocaleString('en-IN')}</span>
-                    </div>
-                    <input 
-                      type="range" 
-                      min="5000" 
-                      max="200000" 
-                      step="5000"
-                      value={estimateBudget}
-                      onChange={(e) => setEstimateBudget(Number(e.target.value))}
-                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                    />
-                    <div className="flex justify-between text-[9px] font-bold text-slate-400 mt-1">
-                      <span>₹5,000</span>
-                      <span>₹2,00,000</span>
-                    </div>
-                  </div>
+                      <div>
+                        <div className="flex justify-between items-center mb-4">
+                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Freelancer Bid</label>
+                          <span className="font-black text-2xl text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-600">₹{estimateBudget.toLocaleString('en-IN')}</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="5000" 
+                          max="200000" 
+                          step="5000"
+                          value={estimateBudget}
+                          onChange={(e) => setEstimateBudget(Number(e.target.value))}
+                          className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-violet-600 shadow-inner"
+                        />
+                      </div>
 
-                  {/* Pricing Breakdown Card */}
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3 font-mono text-xs">
-                    <div className="flex justify-between text-slate-500">
-                      <span>FREELANCER BID AMOUNT:</span>
-                      <span className="font-bold text-slate-800">₹{estimateBudget.toLocaleString('en-IN')}.00</span>
+                      <div className="bg-slate-900 p-6 rounded-2xl shadow-xl space-y-4 font-mono text-sm relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-full pointer-events-none"></div>
+                        <div className="flex justify-between text-slate-400">
+                          <span>FREELANCER BID:</span>
+                          <span className="text-white">₹{estimateBudget.toLocaleString('en-IN')}.00</span>
+                        </div>
+                        <div className="flex justify-between text-slate-400">
+                          <span>PLATFORM FEE (5%):</span>
+                          <span className="text-fuchsia-400">₹{platformFee.toLocaleString('en-IN')}.00</span>
+                        </div>
+                        <div className="border-t border-dashed border-slate-700 w-full my-4"></div>
+                        <div className="flex justify-between text-lg font-black text-white">
+                          <span>TOTAL BILLING:</span>
+                          <span>₹{totalInvoice.toLocaleString('en-IN')}.00</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-slate-500">
-                      <span>PLATFORM FACILITATION (2%):</span>
-                      <span className="font-bold text-slate-800">₹{platformFee.toLocaleString('en-IN')}.00</span>
-                    </div>
-                    <div className="border-t border-dashed border-slate-200 w-full my-2"></div>
-                    <div className="flex justify-between text-sm font-black text-slate-900">
-                      <span>CLIENT TOTAL BILLING:</span>
-                      <span>₹{totalInvoice.toLocaleString('en-IN')}.00</span>
-                    </div>
-                  </div>
-
-                  <div className="text-[10px] text-center text-slate-400 font-semibold leading-relaxed">
-                    💸 Freelancer receives the full ₹{estimateBudget.toLocaleString('en-IN')}. platform fee covers payment gateways & escrow insurance.
                   </div>
                 </div>
-              </motion.div>
-            </div>
+              </TiltCard>
+            </motion.div>
 
           </div>
         </div>
       </section>
 
-      {/* Trust & Escrow Features Redesign - Light Theme */}
-      <section className="py-24 bg-slate-50/50 relative z-10 border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 space-y-3">
-            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-widest">Platform Core Safeguards</span>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Trust built directly into the codebase</h2>
-            <p className="text-slate-500 max-w-2xl mx-auto">We protect client investments and freelancer labor with military-grade safety systems.</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            
-            <div className="p-8 bg-white rounded-3xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 border border-blue-100 rounded-2xl flex items-center justify-center shadow-sm">
-                  <Zap size={22} />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900">Vetted Matching</h3>
-                <p className="text-slate-500 text-xs leading-relaxed font-normal">Our system ensures freelancers are fully approved by moderators before they submit proposal bids on open jobs.</p>
-              </div>
-            </div>
-
-            <div className="p-8 bg-white rounded-3xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-2xl flex items-center justify-center shadow-sm">
-                  <ShieldCheck size={22} />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900">Escrow Security</h3>
-                <p className="text-slate-500 text-xs leading-relaxed font-normal">Payments are deposited to secure virtual accounts via Razorpay before contract kickoff. Funds are released only after client audit.</p>
-              </div>
-            </div>
-
-            <div className="p-8 bg-white rounded-3xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="w-12 h-12 bg-purple-50 text-purple-600 border border-purple-100 rounded-2xl flex items-center justify-center shadow-sm">
-                  <Lock size={22} />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900">Encrypted Chat</h3>
-                <p className="text-slate-500 text-xs leading-relaxed font-normal">All communications are encrypted. The workspace alerts users automatically if they attempt to share contact/payment details outside the system.</p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-24 bg-white relative z-10 border-b border-slate-100">
+      {/* 5. Trust & Escrow Features (Bento Box Layout) */}
+      <section className="py-32 bg-slate-50 relative z-10">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-16 space-y-3">
-            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full uppercase tracking-widest">Global Reviews</span>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight font-sans">Trusted by Indian Founders and Creators</h2>
-            <p className="text-slate-500 max-w-xl mx-auto">See how agencies scale Web and Marketing operations with secure escrow.</p>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-20 space-y-4"
+          >
+            <span className="text-sm font-bold text-emerald-600 uppercase tracking-widest">Platform Safeguards</span>
+            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Built for unbreakable trust</h2>
+          </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ scale: 1.02 }}
+              className="md:col-span-2 glass-panel p-10 rounded-[2rem] flex flex-col justify-center relative overflow-hidden"
+            >
+              <div className="absolute -right-10 -bottom-10 opacity-10 text-emerald-500"><ShieldCheck size={200} /></div>
+              <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center shadow-md mb-6 relative z-10"><ShieldCheck size={28} /></div>
+              <h3 className="text-2xl font-black text-slate-900 mb-3 relative z-10">Military-Grade Escrow</h3>
+              <p className="text-slate-600 font-medium leading-relaxed relative z-10 max-w-md">Payments are deposited to secure virtual accounts before work begins. Funds are strictly released only after client approval.</p>
+            </motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              whileHover={{ scale: 1.02 }}
+              className="glass-panel p-10 rounded-[2rem] bg-gradient-to-b from-white to-slate-100"
+            >
+              <div className="w-14 h-14 bg-violet-100 text-violet-600 rounded-2xl flex items-center justify-center shadow-md mb-6"><Zap size={28} /></div>
+              <h3 className="text-xl font-black text-slate-900 mb-3">Vetted Matches</h3>
+              <p className="text-slate-600 text-sm font-medium leading-relaxed">System-verified freelancers ensure top quality execution.</p>
+            </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200/60 shadow-sm space-y-4">
-              <div className="flex gap-1 text-amber-500"><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/></div>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium italic">"Securing ₹50,000 for a React landing page used to be stressful. With WorkSphere's Escrow funding, I know the client has deposited the cash before I lay down a single line of code."</p>
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">Rohit Mehta</h4>
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Full Stack Dev, Bangalore</p>
-              </div>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              whileHover={{ scale: 1.02 }}
+              className="glass-panel p-10 rounded-[2rem] bg-gradient-to-b from-white to-slate-100"
+            >
+              <div className="w-14 h-14 bg-fuchsia-100 text-fuchsia-600 rounded-2xl flex items-center justify-center shadow-md mb-6"><Lock size={28} /></div>
+              <h3 className="text-xl font-black text-slate-900 mb-3">Encrypted Comms</h3>
+              <p className="text-slate-600 text-sm font-medium leading-relaxed">End-to-end encryption for all project chats and file sharing.</p>
+            </motion.div>
 
-            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200/60 shadow-sm space-y-4">
-              <div className="flex gap-1 text-amber-500"><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/></div>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium italic">"Hired a reels editor and funded ₹15k escrow. The thermal receipt bill looked so professional! Once he delivered, the video went viral and I released the payment. Incredible platform."</p>
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">Anisha Gupta</h4>
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Founder, FinScale media</p>
-              </div>
-            </div>
-
-            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200/60 shadow-sm space-y-4">
-              <div className="flex gap-1 text-amber-500"><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/></div>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium italic">"The 2.0% platform fee is the lowest in the market. The interactive pricing calculator on the homepage is completely transparent. Highly recommended for small startups."</p>
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">Sameer Sen</h4>
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">CTO, EduSpark India</p>
-              </div>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              whileHover={{ scale: 1.02 }}
+              className="md:col-span-2 glass-panel p-10 rounded-[2rem] flex flex-col justify-center relative overflow-hidden bg-gradient-to-br from-slate-100 to-white"
+            >
+              <div className="absolute -right-10 -top-10 opacity-5 text-slate-400"><Target size={200} /></div>
+              <div className="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shadow-md mb-6 relative z-10"><Target size={28} /></div>
+              <h3 className="text-2xl font-black text-slate-900 mb-3 relative z-10">Arbitration Guarantee</h3>
+              <p className="text-slate-600 font-medium leading-relaxed relative z-10 max-w-md">Dispute? Our unbiased admin arbitration team steps in to review deliverables and ensure fair resolution instantly.</p>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Footer - Light Theme */}
-      <footer className="py-12 bg-slate-50 text-slate-500 text-center border-t border-slate-200 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 space-y-4">
-          <div className="text-base font-extrabold text-blue-600 tracking-tight">WorkSphere</div>
-          <p className="text-xs text-slate-400">&copy; {new Date().getFullYear()} WorkSphere. Built with cryptographic verification. All rights reserved.</p>
-          <div className="flex justify-center gap-6 text-xs font-semibold text-slate-400">
-            <a href="#" className="hover:text-blue-600 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-blue-600 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-blue-600 transition-colors">Escrow Guidelines</a>
+      {/* Footer */}
+      <footer className="py-16 bg-white text-slate-500 text-center border-t border-slate-100 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 space-y-6">
+          <div className="text-2xl font-black text-slate-900 tracking-tight">WorkSphere</div>
+          <p className="text-sm font-medium text-slate-400">&copy; {new Date().getFullYear()} WorkSphere. Built with cryptographic verification.</p>
+          <div className="flex justify-center gap-8 text-sm font-bold text-slate-400 pt-4">
+            <button onClick={() => setActivePolicy(policyData.privacy)} className="hover:text-violet-600 transition-colors">Privacy</button>
+            <button onClick={() => setActivePolicy(policyData.terms)} className="hover:text-violet-600 transition-colors">Terms</button>
+            <button onClick={() => setActivePolicy(policyData.escrow)} className="hover:text-violet-600 transition-colors">Escrow</button>
           </div>
         </div>
       </footer>
+      
+      <PolicyModal 
+        isOpen={!!activePolicy} 
+        onClose={() => setActivePolicy(null)} 
+        policy={activePolicy} 
+      />
     </div>
   );
 }

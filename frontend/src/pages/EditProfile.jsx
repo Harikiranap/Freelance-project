@@ -91,7 +91,7 @@ export default function EditProfile() {
             <label className="block text-sm font-medium text-slate-700 mb-2">Phone Number</label>
             <input 
               type="tel" 
-              className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
               value={formData.phoneNumber}
               onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
             />
@@ -102,7 +102,7 @@ export default function EditProfile() {
               <label className="block text-sm font-medium text-slate-700 mb-2">Company Name</label>
               <input 
                 type="text" 
-                className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
                 value={formData.companyName}
                 onChange={(e) => setFormData({...formData, companyName: e.target.value})}
               />
@@ -115,7 +115,7 @@ export default function EditProfile() {
                 <label className="block text-sm font-medium text-slate-700 mb-2">Skills (comma separated)</label>
                 <input 
                   type="text" 
-                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
                   value={formData.skills}
                   onChange={(e) => setFormData({...formData, skills: e.target.value})}
                 />
@@ -124,7 +124,7 @@ export default function EditProfile() {
                 <label className="block text-sm font-medium text-slate-700 mb-2">Portfolio URL</label>
                 <input 
                   type="url" 
-                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
                   value={formData.portfolioUrl}
                   onChange={(e) => setFormData({...formData, portfolioUrl: e.target.value})}
                 />
@@ -135,7 +135,7 @@ export default function EditProfile() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full py-3 mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-all"
+            className="w-full py-3 mt-4 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg shadow-md transition-all"
           >
             {loading ? 'Saving...' : 'Save Changes'}
           </button>

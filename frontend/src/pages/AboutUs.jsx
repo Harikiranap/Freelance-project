@@ -9,7 +9,7 @@ export default function AboutUs() {
           animate={{ opacity: 1, y: 0 }}
           className="text-4xl md:text-6xl font-extrabold text-slate-900 mb-6"
         >
-          Empowering Indian <br/> <span className="text-blue-600">Freelancers & Startups</span>
+          Empowering Indian <br/> <span className="text-violet-600">Freelancers & Startups</span>
         </motion.h1>
         
         <motion.p 

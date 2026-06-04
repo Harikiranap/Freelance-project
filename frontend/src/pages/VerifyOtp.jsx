@@ -53,7 +53,7 @@ export default function VerifyOtp() {
             <input 
               type="text" 
               maxLength="6"
-              className="w-full px-4 py-3 text-center tracking-widest text-2xl rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 text-center tracking-widest text-2xl rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
               placeholder="000000"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
@@ -64,7 +64,7 @@ export default function VerifyOtp() {
           <button 
             type="submit" 
             disabled={isSubmitting}
-            className="w-full py-3 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 disabled:opacity-70 disabled:transform-none"
+            className="w-full py-3 flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 disabled:opacity-70 disabled:transform-none"
           >
             {isSubmitting ? <><Loader2 size={18} className="animate-spin" /> Verifying...</> : 'Verify & Continue'}
           </button>

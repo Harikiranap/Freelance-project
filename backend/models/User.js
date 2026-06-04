@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema(
       enum: ['email', 'google']
     },
     role: { type: String, enum: ['client', 'freelancer', 'admin'], required: true },
+    phoneNumber: { type: String },
     
     // Freelancer specific
     skills: [{ type: String }],

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Loader2, MessageSquare, CheckSquare, CreditCard, Landmark, Compass, Briefcase, FileText } from 'lucide-react';
+import { Loader2, MessageSquare, CheckSquare, CreditCard, Landmark, Compass, Briefcase, FileText, Sparkles, BrainCircuit } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
 import Avatar from '../components/Avatar';
@@ -41,10 +41,11 @@ export default function Dashboard() {
     requireInput: false,
     inputValue: '',
     inputPlaceholder: '',
+    inputType: 'text',
     onConfirm: () => {}
   });
 
-  const triggerConfirm = (title, message, onConfirmAction, requireInput = false, inputPlaceholder = '') => {
+  const triggerConfirm = (title, message, onConfirmAction, requireInput = false, inputPlaceholder = '', inputType = 'text') => {
     setConfirmAction({
       isOpen: true,
       title,
@@ -52,6 +53,7 @@ export default function Dashboard() {
       requireInput,
       inputValue: '',
       inputPlaceholder,
+      inputType,
       onConfirm: (val) => {
         onConfirmAction(val);
         setConfirmAction(prev => ({ ...prev, isOpen: false }));
@@ -68,6 +70,10 @@ export default function Dashboard() {
   const [isPaying, setIsPaying] = useState(null);
   const [isReleasing, setIsReleasing] = useState(null);
   const [isSubmittingWork, setIsSubmittingWork] = useState(null);
+
+  // AI Matching States
+  const [aiMatches, setAiMatches] = useState({});
+  const [loadingAi, setLoadingAi] = useState(null);
 
   const fetchProfile = async () => {
     try {
@@ -140,15 +146,33 @@ export default function Dashboard() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      toast.success("Job posted successfully!");
       setShowJobModal(false);
       setJobForm({ title: '', description: '', budget: '', skills: '', category: 'Web Design' });
       fetchJobs();
       fetchMyJobs();
-      toast.success('Job posted successfully!');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to post job');
+      console.error("Failed to post job", err);
+      toast.error(err.response?.data?.message || "Failed to post job.");
     } finally {
       setIsPosting(false);
+    }
+  };
+
+  const handleAiMatch = async (jobId) => {
+    try {
+      setLoadingAi(jobId);
+      const token = user?.token || localStorage.getItem('token');
+      const res = await axios.get(`http://localhost:5000/api/jobs/${jobId}/ai-match`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAiMatches(prev => ({ ...prev, [jobId]: res.data }));
+      toast.success("AI found the best matches!");
+    } catch (err) {
+      console.error("Failed to get AI matches", err);
+      toast.error("Failed to get AI recommendations.");
+    } finally {
+      setLoadingAi(null);
     }
   };
 
@@ -236,7 +260,8 @@ export default function Dashboard() {
       "Are you sure continuing to submit work for review?",
       (link) => executeDeliverJob(jobId, link),
       true,
-      "Enter GitHub or hosted link here..."
+      "Enter GitHub or hosted link here...",
+      "url"
     );
   };
 
@@ -253,96 +278,6 @@ export default function Dashboard() {
       toast.error(err.response?.data?.message || 'Failed to deliver job');
     } finally {
       setIsSubmittingWork(null);
-    }
-  };
-
-  // Pay Escrow flow (Simulated or Real Razorpay checkout)
-  const handlePayEscrow = async (jobId) => {
-    setIsPaying(jobId);
-    try {
-      const token = user?.token || localStorage.getItem('token');
-      
-      // Step 1: Create Order
-      const orderRes = await axios.post('http://localhost:5000/api/payments/create-order', { jobId }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      const { isMock, order, payment } = orderRes.data;
-      
-      // Step 2: Handle simulated payment if credentials are missing
-      if (isMock) {
-        toast.loading('Simulating bank gateway redirect...', { duration: 1500 });
-        setTimeout(async () => {
-          try {
-            await axios.post('http://localhost:5000/api/payments/verify', {
-              razorpay_order_id: order.id,
-              razorpay_payment_id: `mock_pay_${Math.random().toString(36).substring(7)}`,
-              razorpay_signature: 'mock_sig_verified'
-            }, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success('🎉 Simulated Payment Successful! Escrow is fully funded.');
-            fetchMyJobs();
-            setIsPaying(null);
-          } catch (verifyErr) {
-            toast.error('Simulated payment verification failed.');
-            setIsPaying(null);
-          }
-        }, 1500);
-        return;
-      }
-      
-      // Step 3: Real Razorpay Flow
-      const sdkLoaded = await loadRazorpayScript();
-      if (!sdkLoaded) {
-        toast.error('Failed to load Razorpay Payment Gateway. Check internet connection.');
-        setIsPaying(null);
-        return;
-      }
-      
-      // Fetch public key from backend
-      const keyRes = await axios.get('http://localhost:5000/api/payments/config/key', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      const options = {
-        key: keyRes.data.key,
-        amount: order.amount,
-        currency: order.currency || "INR",
-        name: "WorkSphere Ltd.",
-        description: `Escrow Funding - Job ID: ${jobId.substring(0, 8)}`,
-        order_id: order.id,
-        handler: async function (response) {
-          try {
-            toast.loading('Verifying secure transaction...', { duration: 1500 });
-            await axios.post('http://localhost:5000/api/payments/verify', {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature
-            }, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success('🎉 Escrow funded successfully! Funds are held secure.');
-            fetchMyJobs();
-          } catch (err) {
-            toast.error('Payment verification failed. Contact support.');
-          }
-        },
-        prefill: {
-          name: user.name,
-          email: user.email
-        },
-        theme: {
-          color: "#2563eb"
-        }
-      };
-      
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-      setIsPaying(null);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to initialize escrow payment.');
-      setIsPaying(null);
     }
   };
 
@@ -406,7 +341,7 @@ export default function Dashboard() {
         {user?.role === 'client' && (
           <button 
             onClick={() => setShowJobModal(true)}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+            className="px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
           >
             Post a Job
           </button>
@@ -417,19 +352,19 @@ export default function Dashboard() {
       <div className="flex bg-slate-100/80 p-1.5 rounded-2xl w-full max-w-md border border-slate-200/50">
         <button
           onClick={() => setActiveTab('discover')}
-          className={`flex-1 py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'discover' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`flex-1 py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'discover' ? 'bg-white shadow-md text-violet-600' : 'text-slate-500 hover:text-slate-700'}`}
         >
           <Compass size={16} />
           Explore Jobs
         </button>
         <button
           onClick={() => setActiveTab('workspace')}
-          className={`flex-1 py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'workspace' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`flex-1 py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'workspace' ? 'bg-white shadow-md text-violet-600' : 'text-slate-500 hover:text-slate-700'}`}
         >
           <Briefcase size={16} />
           My Workspace
           {myJobs.length > 0 && (
-            <span className="bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full font-bold">
+            <span className="bg-violet-100 text-violet-600 text-xs px-2 py-0.5 rounded-full font-bold">
               {myJobs.length}
             </span>
           )}
@@ -441,7 +376,7 @@ export default function Dashboard() {
         // Explore/Discover Tab
         loading ? (
           <div className="p-20 text-center flex flex-col items-center justify-center gap-3">
-            <Loader2 size={36} className="animate-spin text-blue-600" />
+            <Loader2 size={36} className="animate-spin text-violet-600" />
             <p className="text-slate-500 text-sm font-medium">Scanning network for active projects...</p>
           </div>
         ) : jobs.length === 0 ? (
@@ -460,13 +395,13 @@ export default function Dashboard() {
               >
                 <div>
                   <div className="flex justify-between items-start mb-4">
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-700">
                       OPEN FOR BIDS
                     </span>
                     <span className="text-lg font-bold text-slate-900">₹{job.budget}</span>
                   </div>
                   
-                  <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">{job.title}</h3>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-violet-600 transition-colors">{job.title}</h3>
                   <p className="text-xs text-slate-400 mb-4">{job.client?.companyName || job.client?.name || 'Client'}</p>
                   <p className="text-sm text-slate-500 mb-5 line-clamp-3">{job.description}</p>
                   
@@ -491,18 +426,18 @@ export default function Dashboard() {
                         <input 
                           type="number" 
                           placeholder="Your Bid Price (₹)" 
-                          className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm"
+                          className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-white text-sm"
                           onChange={(e) => setBidAmount(e.target.value)}
                         />
                         <textarea 
                           placeholder="Brief proposal description..." 
-                          className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm resize-none h-16"
+                          className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-white text-sm resize-none h-16"
                           onChange={(e) => setProposal(e.target.value)}
                         ></textarea>
                         <button 
                           onClick={() => handleBidClick(job._id)}
                           disabled={biddingOn === job._id}
-                          className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 shadow disabled:opacity-50"
+                          className="w-full py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 shadow disabled:opacity-50"
                         >
                           {biddingOn === job._id ? <Loader2 size={16} className="animate-spin" /> : 'Place Bid'}
                         </button>
@@ -516,7 +451,7 @@ export default function Dashboard() {
                   <div className="pt-4 border-t border-slate-100 flex flex-col gap-2 mt-auto">
                     <button 
                       onClick={() => fetchJobBids(job)}
-                      className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                      className="w-full py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg transition-colors"
                     >
                       Manage Proposals
                     </button>
@@ -530,7 +465,7 @@ export default function Dashboard() {
         // Workspace Tab
         loadingMyJobs ? (
           <div className="p-20 text-center flex flex-col items-center justify-center gap-3">
-            <Loader2 size={36} className="animate-spin text-blue-600" />
+            <Loader2 size={36} className="animate-spin text-violet-600" />
             <p className="text-slate-500 text-sm font-medium">Syncing secure workspace agreements...</p>
           </div>
         ) : myJobs.length === 0 ? (
@@ -552,13 +487,13 @@ export default function Dashboard() {
                 statusBg = 'bg-slate-100 text-slate-600 border border-slate-200';
                 statusText = 'PENDING ASSIGNMENT';
               } else if (job.status === 'in-progress') {
-                statusBg = 'bg-indigo-50 text-indigo-700 border border-indigo-100';
+                statusBg = 'bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-100';
                 statusText = 'ACTIVE / IN-PROGRESS';
               } else if (job.status === 'delivered') {
                 statusBg = 'bg-orange-50 text-orange-700 border border-orange-100';
                 statusText = 'DELIVERED (PENDING REVIEW)';
               } else if (job.status === 'completed') {
-                statusBg = 'bg-emerald-50 text-emerald-700 border border-emerald-100';
+                statusBg = 'bg-violet-50 text-violet-700 border border-violet-100';
                 statusText = 'COMPLETED';
               }
 
@@ -570,16 +505,16 @@ export default function Dashboard() {
                   key={job._id}
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-shadow"
+                  className="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col overflow-hidden hover:shadow-md transition-shadow"
                 >
-                  <div className="space-y-4">
+                  <div className="p-6 space-y-4">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusBg}`}>
                         {statusText}
                       </span>
                       <div className="flex items-center gap-1">
                         <span className="text-xs text-slate-400 font-semibold uppercase">Hired Price:</span>
-                        <span className="text-xl font-extrabold text-blue-600">₹{finalPrice}</span>
+                        <span className="text-xl font-extrabold text-violet-600">₹{finalPrice}</span>
                       </div>
                     </div>
 
@@ -609,32 +544,55 @@ export default function Dashboard() {
                           </span>
                         )}
                         {job.paymentStatus === 'escrow_funded' && (
-                          <span className="px-2.5 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1">
+                          <span className="px-2.5 py-0.5 rounded-full font-bold bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-100 flex items-center gap-1">
                             🔐 SECURELY HELD
                           </span>
                         )}
                         {job.paymentStatus === 'released' && (
-                          <span className="px-2.5 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                          <span className="px-2.5 py-0.5 rounded-full font-bold bg-violet-50 text-violet-700 border border-violet-100">
                             RELEASED TO TALENT
                           </span>
                         )}
                       </div>
                     </div>
+
+                    {job.deliverableLink && (
+                      <div className="mt-4 p-3 bg-violet-50/50 border border-violet-100 rounded-lg">
+                        <p className="text-xs font-semibold text-violet-700 mb-1">Delivered Work Link:</p>
+                        <a href={job.deliverableLink.includes('http') ? job.deliverableLink : `https://${job.deliverableLink}`} target="_blank" rel="noopener noreferrer" className="text-sm text-violet-600 hover:underline break-all">
+                          {job.deliverableLink}
+                        </a>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Actions Area */}
-                  <div className="mt-6 pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                    
-                    {/* Message / Chat Button */}
-                    <button 
-                      onClick={() => handleChatTransition(job._id)}
-                      className="px-4 py-2 text-slate-600 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors"
-                    >
-                      <MessageSquare size={14} />
-                      Encrypted Chat
-                    </button>
+                    {/* Actions Area */}
+                    <div className="mt-auto p-6 pt-0 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 pt-5">
+                      
+                      {/* Left Actions */}
+                      <div className="flex gap-2">
+                        {/* Message / Chat Button */}
+                        <button 
+                          onClick={() => handleChatTransition(job._id)}
+                          className="px-4 py-2 text-slate-600 hover:text-violet-600 bg-slate-50 hover:bg-violet-50 border border-slate-200 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors"
+                        >
+                          <MessageSquare size={14} />
+                          Encrypted Chat
+                        </button>
+                        
+                        {user?.role === 'client' && job.status === 'open' && (
+                          <button 
+                            onClick={() => handleAiMatch(job._id)}
+                            disabled={loadingAi === job._id}
+                            className="px-4 py-2 text-fuchsia-700 hover:text-fuchsia-800 bg-fuchsia-50 hover:bg-fuchsia-100 border border-fuchsia-200 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
+                          >
+                            {loadingAi === job._id ? <Loader2 size={14} className="animate-spin" /> : <BrainCircuit size={14} />}
+                            Find AI Matches
+                          </button>
+                        )}
+                      </div>
 
-                    <div className="flex gap-2">
+                      <div className="flex gap-2">
                       {/* Freelancer submits work */}
                       {user?.role === 'freelancer' && job.status === 'in-progress' && (
                         <button
@@ -651,7 +609,7 @@ export default function Dashboard() {
                       {user?.role === 'client' && job.status === 'in-progress' && job.paymentStatus === 'pending' && (
                         <button
                           onClick={() => navigate(`/payment/${job._id}`)}
-                          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 animate-pulse hover:animate-none"
+                          className="px-4 py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-lg text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 animate-pulse hover:animate-none"
                         >
                           <CreditCard size={14} />
                           Pay Escrow
@@ -663,7 +621,7 @@ export default function Dashboard() {
                         <button
                           onClick={() => handleReleaseClick(job._id)}
                           disabled={isReleasing === job._id}
-                          className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 disabled:opacity-50"
+                          className="px-4 py-2 bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white rounded-lg text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 disabled:opacity-50"
                         >
                           {isReleasing === job._id ? <Loader2 size={12} className="animate-spin" /> : <CheckSquare size={14} />}
                           Release Payment & Close
@@ -671,6 +629,39 @@ export default function Dashboard() {
                       )}
                     </div>
                   </div>
+
+                  {/* AI Matches Display Section */}
+                  {aiMatches[job._id] && (
+                    <div className="border-t border-fuchsia-100 bg-fuchsia-50/30 p-5">
+                      <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                        <Sparkles size={16} className="text-fuchsia-500" /> AI Top Recommended Freelancers
+                      </h4>
+                      {aiMatches[job._id].length === 0 ? (
+                        <p className="text-xs text-slate-500">No matching freelancers found for these skills.</p>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {aiMatches[job._id].map((match, idx) => (
+                            <div key={idx} className="bg-white border border-fuchsia-100 rounded-xl p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+                              <div className="flex items-center gap-3">
+                                <Avatar name={match.freelancer.name} size={36} className="border-fuchsia-100 text-fuchsia-600" />
+                                <div>
+                                  <div className="font-bold text-sm text-slate-800">{match.freelancer.name}</div>
+                                  <div className="text-[10px] font-semibold text-slate-400">Rating: {match.freelancer.rating} ⭐</div>
+                                </div>
+                              </div>
+                              <div className="text-right flex flex-col items-end">
+                                <div className="text-sm font-black text-fuchsia-600">{Math.round(match.score * 100)}% Match</div>
+                                <button className="mt-1 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold rounded uppercase transition-colors">
+                                  Invite
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                 </motion.div>
               );
             })}
@@ -702,7 +693,7 @@ export default function Dashboard() {
                   required
                   value={jobForm.title}
                   onChange={e => setJobForm({...jobForm, title: e.target.value})}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" 
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm" 
                   placeholder="e.g. React & Node Developer Needed for SaaS" 
                 />
               </div>
@@ -712,7 +703,7 @@ export default function Dashboard() {
                 <select 
                   value={jobForm.category}
                   onChange={e => setJobForm({...jobForm, category: e.target.value})}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm bg-white"
                 >
                   <option value="Web Design">Web Design</option>
                   <option value="Video Editing">Video Editing</option>
@@ -730,7 +721,7 @@ export default function Dashboard() {
                   required
                   value={jobForm.description}
                   onChange={e => setJobForm({...jobForm, description: e.target.value})}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 h-28 resize-none text-sm" 
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 h-28 resize-none text-sm" 
                   placeholder="Describe the deliverables, scope of work, and timelines..."
                 ></textarea>
               </div>
@@ -743,7 +734,7 @@ export default function Dashboard() {
                     required
                     value={jobForm.budget}
                     onChange={e => setJobForm({...jobForm, budget: e.target.value})}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" 
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm" 
                     placeholder="e.g. 50000" 
                   />
                 </div>
@@ -754,7 +745,7 @@ export default function Dashboard() {
                     required
                     value={jobForm.skills}
                     onChange={e => setJobForm({...jobForm, skills: e.target.value})}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" 
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm" 
                     placeholder="React, Express, JWT" 
                   />
                 </div>
@@ -762,7 +753,7 @@ export default function Dashboard() {
 
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
                 <button type="button" onClick={() => setShowJobModal(false)} disabled={isPosting} className="px-5 py-2 text-slate-600 font-semibold hover:bg-slate-50 rounded-lg text-sm transition-colors">Cancel</button>
-                <button type="submit" disabled={isPosting} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm shadow-md transition-colors flex items-center gap-2">
+                <button type="submit" disabled={isPosting} className="px-5 py-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg text-sm shadow-md transition-colors flex items-center gap-2">
                   {isPosting ? <><Loader2 size={14} className="animate-spin" /> Publishing...</> : 'Publish Job'}
                 </button>
               </div>
@@ -794,7 +785,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 jobBids.map(bid => (
-                  <div key={bid._id} className="border border-slate-200 bg-white rounded-2xl p-5 hover:border-blue-300 transition-colors shadow-sm flex flex-col justify-between gap-4">
+                  <div key={bid._id} className="border border-slate-200 bg-white rounded-2xl p-5 hover:border-violet-300 transition-colors shadow-sm flex flex-col justify-between gap-4">
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex items-start gap-3">
                         <Avatar name={bid.freelancer?.name} size={40} />
@@ -809,7 +800,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-extrabold text-blue-600">₹{bid.amount}</div>
+                        <div className="text-2xl font-extrabold text-violet-600">₹{bid.amount}</div>
                         <div className="text-[10px] text-slate-400 font-semibold uppercase mt-1">{new Date(bid.createdAt).toLocaleDateString()}</div>
                       </div>
                     </div>
@@ -823,7 +814,7 @@ export default function Dashboard() {
                       <button 
                         onClick={() => handleAcceptBidClick(bid._id, bid.amount, bid.freelancer?.name || 'Freelancer')}
                         disabled={isAccepting === bid._id}
-                        className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full py-2.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
                       >
                         {isAccepting === bid._id ? <Loader2 size={16} className="animate-spin" /> : 'Accept Bid & Initiate Hired Contract'}
                       </button>
@@ -847,6 +838,7 @@ export default function Dashboard() {
         requireInput={confirmAction.requireInput}
         inputValue={confirmAction.inputValue}
         inputPlaceholder={confirmAction.inputPlaceholder}
+        inputType={confirmAction.inputType}
         onInputChange={(val) => setConfirmAction(prev => ({ ...prev, inputValue: val }))}
         onConfirm={() => confirmAction.onConfirm(confirmAction.inputValue)}
         onCancel={() => setConfirmAction(prev => ({ ...prev, isOpen: false }))}

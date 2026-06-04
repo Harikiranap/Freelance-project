@@ -4,8 +4,15 @@ const jwt = require('jsonwebtoken');
 const { encrypt } = require('../utils/crypto');
 const nodemailer = require('nodemailer');
 
-const generateToken = (id, role, isProfileComplete) => {
-  return jwt.sign({ id, role, isProfileComplete }, process.env.JWT_SECRET, {
+const generateToken = (user) => {
+  return jwt.sign({ 
+    id: user._id || user.id, 
+    role: user.role, 
+    isProfileComplete: user.isProfileComplete, 
+    name: user.name,
+    email: user.email,
+    phoneNumber: user.phoneNumber
+  }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
 };
@@ -28,11 +35,11 @@ nodemailer.createTestAccount().then(account => {
 
 exports.register = async (req, res) => {
   try {
-    const { name, username, email, password, role, skills, companyName, upiId } = req.body;
+    const { name, email, password, role, skills, companyName, upiId, phoneNumber } = req.body;
 
-    const userExists = await User.findOne({ $or: [{ email }, { username }] });
+    const userExists = await User.findOne({ $or: [{ email }, { name }] });
     if (userExists) {
-      return res.status(400).json({ message: 'User with this email or username already exists' });
+      return res.status(400).json({ message: 'User with this email or name already exists' });
     }
 
     // Hash password
@@ -48,13 +55,13 @@ exports.register = async (req, res) => {
 
     const user = await User.create({
       name,
-      username,
       email,
       password: hashedPassword,
       role,
       skills,
       companyName,
       upiId: encryptedUpi,
+      phoneNumber,
       otp,
       otpExpires
     });
@@ -106,7 +113,7 @@ exports.verifyOtp = async (req, res) => {
       email: user.email,
       role: user.role,
       isProfileComplete: user.isProfileComplete,
-      token: generateToken(user._id, user.role, user.isProfileComplete),
+      token: generateToken(user),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -117,8 +124,8 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // The 'email' field from the frontend can be either email or username
-    const user = await User.findOne({ $or: [{ email }, { username: email }] });
+    // The 'email' field from the frontend can be either email or name
+    const user = await User.findOne({ $or: [{ email }, { name: email }] });
 
     if (user && (await bcrypt.compare(password, user.password))) {
       if (!user.isVerified) {
@@ -129,8 +136,9 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        phoneNumber: user.phoneNumber,
         isProfileComplete: user.isProfileComplete,
-        token: generateToken(user._id, user.role, user.isProfileComplete),
+        token: generateToken(user),
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
@@ -160,7 +168,7 @@ exports.googleLogin = async (req, res) => {
       email: user.email,
       role: user.role,
       isProfileComplete: user.isProfileComplete,
-      token: generateToken(user._id, user.role, user.isProfileComplete),
+      token: generateToken(user),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -189,7 +197,7 @@ exports.completeProfile = async (req, res) => {
       email: user.email,
       role: user.role,
       isProfileComplete: user.isProfileComplete,
-      token: generateToken(user._id, user.role, user.isProfileComplete),
+      token: generateToken(user),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -224,7 +232,7 @@ exports.googleComplete = async (req, res) => {
       email: user.email,
       role: user.role,
       isProfileComplete: user.isProfileComplete,
-      token: generateToken(user._id, user.role, user.isProfileComplete),
+      token: generateToken(user),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -255,7 +263,7 @@ exports.updateProfile = async (req, res) => {
       email: user.email,
       role: user.role,
       isProfileComplete: user.isProfileComplete,
-      token: generateToken(user._id, user.role, user.isProfileComplete),
+      token: generateToken(user),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

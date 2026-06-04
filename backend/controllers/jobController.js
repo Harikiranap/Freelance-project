@@ -3,6 +3,7 @@ const Bid = require('../models/Bid');
 const Message = require('../models/Message');
 const User = require('../models/User');
 const { decrypt } = require('../utils/crypto');
+const axios = require('axios');
 
 exports.createJob = async (req, res) => {
   try {
@@ -215,5 +216,48 @@ exports.approveJob = async (req, res) => {
     res.json({ message: 'Job approved successfully', job });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getAiMatches = async (req, res) => {
+  try {
+    const jobId = req.params.jobId;
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
+    if (job.client.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to get AI matches for this job' });
+    }
+
+    const freelancers = await User.find({ role: 'freelancer' }).select('_id skills name username rating profileCompleteness');
+
+    const payload = {
+      job: {
+        id: job._id.toString(),
+        skills_required: job.skills
+      },
+      freelancers: freelancers.map(f => ({
+        id: f._id.toString(),
+        skills: f.skills
+      }))
+    };
+
+    const aiResponse = await axios.post('http://127.0.0.1:8000/match', payload);
+    const matches = aiResponse.data;
+
+    const enrichedMatches = matches.map(match => {
+      const fData = freelancers.find(f => f._id.toString() === match.freelancer_id);
+      return {
+        freelancer: fData,
+        score: match.score
+      };
+    });
+
+    res.status(200).json(enrichedMatches);
+  } catch (error) {
+    console.error('AI Matcher Error:', error.message);
+    res.status(500).json({ message: 'Failed to generate AI matches' });
   }
 };

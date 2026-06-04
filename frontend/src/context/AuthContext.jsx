@@ -14,6 +14,8 @@ const decodeToken = (token) => {
       role: payload.role,
       isProfileComplete: payload.isProfileComplete,
       name: payload.name,
+      email: payload.email,
+      phoneNumber: payload.phoneNumber,
     };
   } catch {
     return null;
@@ -24,6 +26,11 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token') || sessionStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
+  
+  // Auth Modal State
+  const [authModal, setAuthModal] = useState(null); // 'login' | 'register' | null
+  const openAuth = (type = 'login') => setAuthModal(type);
+  const closeAuth = () => setAuthModal(null);
 
   useEffect(() => {
     if (token) {
@@ -62,7 +69,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading, authModal, openAuth, closeAuth }}>
       {!loading && children}
     </AuthContext.Provider>
   );

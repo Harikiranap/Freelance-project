@@ -127,7 +127,7 @@ export default function Chat() {
               <div 
                 key={job._id}
                 onClick={() => setSelectedJob(job)}
-                className={`p-4 border-b border-slate-100 cursor-pointer transition-colors ${selectedJob?._id === job._id ? 'bg-blue-50 border-l-4 border-l-blue-600' : 'hover:bg-slate-100'}`}
+                className={`p-4 border-b border-slate-100 cursor-pointer transition-colors ${selectedJob?._id === job._id ? 'bg-violet-50 border-l-4 border-l-violet-600' : 'hover:bg-slate-100'}`}
               >
                 <h3 className="font-semibold text-slate-800 truncate">{job.title}</h3>
                 <p className="text-xs text-slate-500 mt-1 truncate">
@@ -178,11 +178,11 @@ export default function Chat() {
                 >
                   <div className={`max-w-[70%] p-3.5 rounded-2xl shadow-sm ${
                     isMe
-                      ? 'bg-blue-600 text-white rounded-tr-none' 
+                      ? 'bg-violet-600 text-white rounded-tr-none' 
                       : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'
                   }`}>
                     <p className="text-sm break-all">{msg.content}</p>
-                    <span className={`text-[10px] mt-1.5 block text-right ${isMe ? 'text-blue-200' : 'text-slate-400'}`}>
+                    <span className={`text-[10px] mt-1.5 block text-right ${isMe ? 'text-violet-200' : 'text-slate-400'}`}>
                       {new Date(msg.createdAt || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </span>
                   </div>
@@ -198,13 +198,13 @@ export default function Chat() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type a message..."
-              className="flex-1 px-5 py-3 bg-slate-50 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm"
+              className="flex-1 px-5 py-3 bg-slate-50 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-white transition-all text-sm"
               disabled={selectedJob.status === 'open' && user.role === 'client' && !selectedJob.selectedFreelancer}
             />
             <button 
               type="submit" 
               disabled={selectedJob.status === 'open' && user.role === 'client' && !selectedJob.selectedFreelancer}
-              className="bg-blue-600 text-white px-8 py-3 rounded-full font-medium hover:bg-blue-700 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-violet-600 text-white px-8 py-3 rounded-full font-medium hover:bg-violet-700 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Send
             </button>
@@ -219,7 +219,7 @@ export default function Chat() {
       ) : (
         <div className="flex-1 flex items-center justify-center bg-slate-50">
           <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-violet-100 text-violet-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
             </div>
             <h3 className="text-lg font-bold text-slate-700">Your Messages</h3>

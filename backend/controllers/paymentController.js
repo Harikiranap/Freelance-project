@@ -18,7 +18,7 @@ exports.createOrder = async (req, res) => {
     if (!job.selectedFreelancer) return res.status(400).json({ message: 'No freelancer selected yet' });
 
     const basePrice = job.acceptedPrice || job.budget; // Use agreed bid amount if available
-    const platformFee = basePrice * 0.02; // 2% platform fee
+    const platformFee = basePrice * 0.05; // 5% platform fee
     const totalAmount = basePrice + platformFee; // Client pays bid + fee
     const freelancerAmount = basePrice; // Freelancer receives full bid
 
