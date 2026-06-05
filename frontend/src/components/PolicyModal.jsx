@@ -4,10 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShieldCheck, FileText, Landmark } from 'lucide-react';
 
 export default function PolicyModal({ isOpen, onClose, policy }) {
-  if (!policy) return null;
-
-  const Icon = policy.type === 'privacy' ? ShieldCheck : policy.type === 'escrow' ? Landmark : FileText;
-
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -16,6 +12,10 @@ export default function PolicyModal({ isOpen, onClose, policy }) {
     }
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
+
+  if (!policy) return null;
+
+  const Icon = policy.type === 'privacy' ? ShieldCheck : policy.type === 'escrow' ? Landmark : FileText;
 
   return createPortal(
     <AnimatePresence>

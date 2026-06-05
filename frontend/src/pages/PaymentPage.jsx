@@ -317,7 +317,7 @@ export default function PaymentPage() {
             <div className="text-center space-y-1">
               <h1 className="text-xl font-black tracking-tighter text-slate-900 uppercase">WORKSphere</h1>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Secure Escrow Receipt</p>
-              <p className="text-[9px] text-slate-400">Mumbai, MH - India</p>
+              <p className="text-[9px] text-slate-400">Mangalore, MAQ - India</p>
             </div>
 
             {/* Dashed Separator */}
