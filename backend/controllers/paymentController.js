@@ -58,7 +58,9 @@ exports.createOrder = async (req, res) => {
 
     res.json({ isMock: false, order, payment });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error in createOrder:', error);
+    const errorMsg = error.message || (error.error && error.error.description) || 'Payment initialization failed';
+    res.status(500).json({ message: errorMsg });
   }
 };
 
@@ -119,7 +121,8 @@ exports.verifyPayment = async (req, res) => {
       res.status(400).json({ message: 'Invalid payment details' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error in verifyPayment:', error);
+    res.status(500).json({ message: error.message || 'Payment verification failed' });
   }
 };
 

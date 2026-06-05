@@ -1,5 +1,5 @@
 const express = require('express');
-const { createJob, getJobs, getMyJobs, getJobMessages, placeBid, acceptBid, getJobBids, deliverJob, getJobById, approveJob, getAiMatches } = require('../controllers/jobController');
+const { createJob, getJobs, getMyJobs, getJobMessages, placeBid, acceptBid, getJobBids, deliverJob, getJobById, approveJob, getAiMatches, updateBid } = require('../controllers/jobController');
 const { protect, authorize } = require('../middleware/auth');
 const router = express.Router();
 
@@ -17,5 +17,6 @@ router.post('/:jobId/bid', protect, authorize('freelancer'), placeBid);
 router.post('/:jobId/deliver', protect, authorize('freelancer'), deliverJob);
 router.post('/:jobId/approve', protect, authorize('admin'), approveJob);
 router.post('/bid/:bidId/accept', protect, authorize('client'), acceptBid);
+router.put('/bid/:bidId', protect, authorize('freelancer'), updateBid);
 
 module.exports = router;

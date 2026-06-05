@@ -13,8 +13,12 @@ export default function AuthModal() {
   
   useEffect(() => {
     if (authModal) {
+      document.body.style.overflow = 'hidden';
       setIsLogin(authModal === 'login');
+    } else {
+      document.body.style.overflow = 'unset';
     }
+    return () => { document.body.style.overflow = 'unset'; };
   }, [authModal]);
 
   // Form State
@@ -25,7 +29,6 @@ export default function AuthModal() {
   const [role, setRole] = useState('client');
   const [error, setError] = useState('');
   const [acceptPolicies, setAcceptPolicies] = useState(false);
-  const [rememberMe, setRememberMe] = useState(!!localStorage.getItem('rememberedEmail'));
   
   // Password Visibility
   const [showPassword, setShowPassword] = useState(false);
@@ -49,12 +52,8 @@ export default function AuthModal() {
     try {
       if (isLogin) {
         const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
-        login(res.data.token, res.data, rememberMe);
-        if (rememberMe) {
-          localStorage.setItem('rememberedEmail', email);
-        } else {
-          localStorage.removeItem('rememberedEmail');
-        }
+        login(res.data.token, res.data);
+        localStorage.removeItem('rememberedEmail');
         toast.success('Successfully logged in!');
         closeAuth();
       } else {
@@ -149,13 +148,13 @@ export default function AuthModal() {
               <p className="text-sm text-slate-500 text-center mb-6">Are you joining as a Client or a Freelancer?</p>
               
               <div className="space-y-4 mb-6">
-                <label className={`block p-4 border rounded-xl cursor-pointer transition-all duration-300 ${selectedRole === 'client' ? 'border-violet-400 bg-violet-50/80 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'border-slate-200 hover:border-violet-200 bg-white/50'}`}>
+                <label className={`block p-4 border rounded-xl cursor-pointer transition-all duration-300 ${selectedRole === 'client' ? 'border-blue-400 bg-blue-50/80 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'border-slate-200 hover:border-blue-200 bg-white/50'}`}>
                   <input type="radio" className="hidden" name="role" value="client" checked={selectedRole === 'client'} onChange={(e) => setSelectedRole(e.target.value)} />
                   <div className="font-semibold text-slate-900">Client</div>
                   <div className="text-sm text-slate-500">I am a Client.</div>
                 </label>
                 
-                <label className={`block p-4 border rounded-xl cursor-pointer transition-all duration-300 ${selectedRole === 'freelancer' ? 'border-fuchsia-400 bg-fuchsia-50/80 shadow-[0_0_15px_rgba(99,102,241,0.2)]' : 'border-slate-200 hover:border-fuchsia-200 bg-white/50'}`}>
+                <label className={`block p-4 border rounded-xl cursor-pointer transition-all duration-300 ${selectedRole === 'freelancer' ? 'border-slate-400 bg-slate-50/80 shadow-[0_0_15px_rgba(99,102,241,0.2)]' : 'border-slate-200 hover:border-slate-200 bg-white/50'}`}>
                   <input type="radio" className="hidden" name="role" value="freelancer" checked={selectedRole === 'freelancer'} onChange={(e) => setSelectedRole(e.target.value)} />
                   <div className="font-semibold text-slate-900">Freelancer</div>
                   <div className="text-sm text-slate-500">I am a Freelancer.</div>
@@ -165,7 +164,7 @@ export default function AuthModal() {
               <button 
                 onClick={handleGoogleRoleSubmit}
                 disabled={isSubmitting}
-                className="w-full py-3.5 bg-violet-600 hover:bg-violet-700 text-white font-bold flex items-center justify-center gap-2 rounded-xl shadow-md transition-all disabled:opacity-70 transform hover:-translate-y-1"
+                className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center justify-center gap-2 rounded-xl shadow-md transition-all disabled:opacity-70 transform hover:-translate-y-1"
               >
                 {isSubmitting ? <><Loader2 size={18} className="animate-spin" /> Processing...</> : 'Continue to Dashboard'}
               </button>
@@ -187,13 +186,13 @@ export default function AuthModal() {
               <div className="flex bg-slate-100/80 p-1 rounded-xl mb-4 backdrop-blur-md border border-slate-200/50 mt-6 md:mt-4">
                 <button 
                   onClick={() => { setIsLogin(true); setError(''); }}
-                  className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${isLogin ? 'bg-white shadow-sm text-violet-600' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${isLogin ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                   Log In
                 </button>
                 <button 
                   onClick={() => { setIsLogin(false); setError(''); }}
-                  className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${!isLogin ? 'bg-white shadow-sm text-violet-600' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${!isLogin ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                   Sign Up
                 </button>
@@ -212,14 +211,14 @@ export default function AuthModal() {
                         <button 
                           type="button"
                           onClick={() => setRole('client')}
-                          className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${role === 'client' ? 'bg-white text-violet-600 shadow-sm border border-slate-100' : 'text-slate-500 hover:text-slate-700'}`}
+                          className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${role === 'client' ? 'bg-white text-blue-600 shadow-sm border border-slate-100' : 'text-slate-500 hover:text-slate-700'}`}
                         >
                           Hire (Client)
                         </button>
                         <button 
                           type="button"
                           onClick={() => setRole('freelancer')}
-                          className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${role === 'freelancer' ? 'bg-white text-violet-600 shadow-sm border border-slate-100' : 'text-slate-500 hover:text-slate-700'}`}
+                          className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${role === 'freelancer' ? 'bg-white text-blue-600 shadow-sm border border-slate-100' : 'text-slate-500 hover:text-slate-700'}`}
                         >
                           Work (Freelancer)
                         </button>
@@ -229,7 +228,7 @@ export default function AuthModal() {
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Full Name</label>
                       <input 
                         type="text" 
-                        className="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all text-sm text-slate-900 placeholder-slate-400"
+                        className="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-sm text-slate-900 placeholder-slate-400"
                         placeholder="John Doe"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -240,7 +239,7 @@ export default function AuthModal() {
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Phone Number</label>
                       <input 
                         type="tel" 
-                        className="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all text-sm text-slate-900 placeholder-slate-400"
+                        className="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-sm text-slate-900 placeholder-slate-400"
                         placeholder="9876543210"
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
@@ -254,7 +253,7 @@ export default function AuthModal() {
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{isLogin ? 'Email or Name' : 'Email'}</label>
                   <input 
                     type="text" 
-                    className="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all text-sm text-slate-900 placeholder-slate-400"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-sm text-slate-900 placeholder-slate-400"
                     placeholder={isLogin ? "Enter email or name" : "you@example.com"}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -267,7 +266,7 @@ export default function AuthModal() {
                   <div className="relative">
                     <input 
                       type={showPassword ? "text" : "password"} 
-                      className="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all text-sm text-slate-900 placeholder-slate-400 pr-10"
+                      className="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-sm text-slate-900 placeholder-slate-400 pr-10"
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -291,36 +290,24 @@ export default function AuthModal() {
                       required
                       checked={acceptPolicies}
                       onChange={(e) => setAcceptPolicies(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer"
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
                     <label htmlFor="acceptPolicies" className="text-xs text-slate-500 leading-relaxed select-none cursor-pointer">
-                      I accept the <a href="#" onClick={(e) => { e.preventDefault(); alert("Privacy Policy: Your data is secure."); }} className="text-violet-600 hover:underline font-bold transition-colors">Privacy Policy</a> and consent to cookies.
+                      I accept the <a href="#" onClick={(e) => { e.preventDefault(); alert("Privacy Policy: Your data is secure."); }} className="text-blue-600 hover:underline font-bold transition-colors">Privacy Policy</a> and consent to cookies.
                     </label>
                   </div>
                 )}
 
                 {isLogin && (
-                  <div className="flex items-center justify-between mt-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="checkbox"
-                        id="rememberMe"
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer"
-                      />
-                      <label htmlFor="rememberMe" className="text-sm font-medium text-slate-600 select-none cursor-pointer hover:text-slate-900 transition-colors">
-                        Remember me
-                      </label>
-                    </div>
-                    <a href="#" className="text-sm font-bold text-violet-600 hover:underline transition-colors">Forgot password?</a>
+                  <div className="flex items-center justify-end mt-4 mb-4">
+                    <a href="#" className="text-sm font-bold text-blue-600 hover:underline transition-colors">Forgot password?</a>
                   </div>
                 )}
                 
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="w-full py-3.5 mt-4 flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl shadow-md transition-all transform hover:-translate-y-1 disabled:opacity-70 disabled:transform-none"
+                  className="w-full py-3.5 mt-4 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all transform hover:-translate-y-1 disabled:opacity-70 disabled:transform-none"
                 >
                   {isSubmitting ? (
                     <>

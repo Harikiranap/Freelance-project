@@ -1,14 +1,46 @@
 const User = require('../models/User');
 const Job = require('../models/Job');
+const Payment = require('../models/Payment');
 
 exports.getStats = async (req, res) => {
   try {
     const userCount = await User.countDocuments();
     const jobCount = await Job.countDocuments();
-    const users = await User.find().select('-password').sort({ createdAt: -1 }).limit(20);
-    const jobs = await Job.find().populate('client', 'name').sort({ createdAt: -1 }).limit(20);
+    const paymentCount = await Payment.countDocuments();
 
-    res.json({ userCount, jobCount, users, jobs });
+    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    const jobs = await Job.find().populate('client', 'name').sort({ createdAt: -1 });
+    const payments = await Payment.find()
+      .populate('client', 'name')
+      .populate('freelancer', 'name')
+      .populate('job', 'title')
+      .sort({ createdAt: -1 });
+
+    // Financial Metrics
+    const fundedPayments = payments.filter(p => p.status === 'escrow_funded' || p.status === 'released');
+    const totalEscrowVolume = fundedPayments.reduce((acc, p) => acc + p.amount, 0);
+    const platformFees = fundedPayments.reduce((acc, p) => acc + (p.platformFee || 0), 0);
+
+    // Job Status counts
+    const jobsStatus = {
+      open: jobs.filter(j => j.status === 'open').length,
+      inProgress: jobs.filter(j => j.status === 'in-progress').length,
+      completed: jobs.filter(j => j.status === 'completed').length,
+      delivered: jobs.filter(j => j.status === 'delivered').length,
+      pendingApproval: jobs.filter(j => !j.isApproved).length
+    };
+
+    res.json({ 
+      userCount, 
+      jobCount, 
+      paymentCount,
+      totalEscrowVolume,
+      platformFees,
+      users, 
+      jobs,
+      payments,
+      jobsStatus
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -1,14 +1,20 @@
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
+import { motion, useScroll, useTransform, useMotionValue, useSpring, useInView } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { ShieldCheck, Zap, Lock, ArrowRight, Briefcase, Calculator, Award, Sparkles, MonitorPlay, FileText, ChevronRight, Video, CheckCircle2, Star, Target, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import PolicyModal from '../components/PolicyModal';
+import heroIllustration from '../assets/hero_illustration_transparent.png';
 
 // Enhanced 3D Canvas Mesh
 function InteractiveMesh() {
   const canvasRef = useRef(null);
+  const isInView = useInView(canvasRef);
+  const isInViewRef = useRef(isInView);
+
+  useEffect(() => {
+    isInViewRef.current = isInView;
+  }, [isInView]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -83,8 +89,9 @@ function InteractiveMesh() {
     });
 
     const animate = () => {
-      ctx.clearRect(0, 0, width, height);
-      ctx.shadowBlur = 0; // Reset shadow for lines
+      if (isInViewRef.current) {
+        ctx.clearRect(0, 0, width, height);
+        ctx.shadowBlur = 0; // Reset shadow for lines
 
       particles.forEach((p) => {
         p.update();
@@ -105,6 +112,7 @@ function InteractiveMesh() {
             ctx.strokeStyle = `rgba(139, 92, 246, ${alpha})`; // Violet connections
             ctx.lineWidth = 1.5;
             ctx.stroke();
+            }
           }
         }
       }
@@ -167,7 +175,6 @@ function TiltCard({ children, className }) {
 }
 
 export default function Home() {
-  const [activePolicy, setActivePolicy] = useState(null);
   const [jobs, setJobs] = useState([]);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -176,12 +183,6 @@ export default function Home() {
   const [estimateBudget, setEstimateBudget] = useState(40000);
   const platformFee = Math.round(estimateBudget * 0.05);
   const totalInvoice = estimateBudget + platformFee;
-
-  const policyData = {
-    privacy: { type: 'privacy', title: 'Privacy Policy', content: "Your privacy is important..." },
-    terms: { type: 'terms', title: 'Terms of Service', content: "By accessing WorkSphere..." },
-    escrow: { type: 'escrow', title: 'Escrow Guidelines', content: "Our escrow system guarantees safety..." }
-  };
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -197,9 +198,9 @@ export default function Home() {
 
   const categoriesData = [
     { name: 'Web Design', icon: <Briefcase size={24} />, desc: 'Next.js, Tailwind layouts, and interactive WebGL assets.', count: '140+ Projects', color: 'from-blue-500 to-indigo-500' },
-    { name: 'Video Editing', icon: <Video size={24} />, desc: 'SaaS promos, corporate reviews, color grading, and SFX.', count: '85+ Projects', color: 'from-fuchsia-500 to-pink-500' },
-    { name: 'Reels Making', icon: <MonitorPlay size={24} />, desc: 'High retention captions, fast-paced transitions, TikTok.', count: '220+ Projects', color: 'from-violet-500 to-purple-500' },
-    { name: 'Copywriting', icon: <FileText size={24} />, desc: 'High-converting ad copies, sales sequences, and blogs.', count: '95+ Projects', color: 'from-emerald-500 to-teal-500' },
+    { name: 'Video Editing', icon: <Video size={24} />, desc: 'SaaS promos, corporate reviews, color grading, and SFX.', count: '85+ Projects', color: 'from-slate-500 to-pink-500' },
+    { name: 'Reels Making', icon: <MonitorPlay size={24} />, desc: 'High retention captions, fast-paced transitions, TikTok.', count: '220+ Projects', color: 'from-blue-500 to-purple-500' },
+    { name: 'Copywriting', icon: <FileText size={24} />, desc: 'High-converting ad copies, sales sequences, and blogs.', count: '95+ Projects', color: 'from-slate-500 to-teal-500' },
   ];
 
   return (
@@ -208,13 +209,13 @@ export default function Home() {
       {/* 1. Hero Section with 3D Elements */}
       <section className="relative min-h-screen flex items-center justify-center pt-20 pb-32 px-4 bg-grid-pattern overflow-hidden">
         {/* Glow behind hero */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet-300/30 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-300/30 rounded-full blur-[120px] pointer-events-none"></div>
         
         <InteractiveMesh />
         
         {/* Floating 3D Orbs/Elements */}
         <div className="absolute top-32 left-20 animate-float">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-violet-500 to-fuchsia-500 blur-sm opacity-80 shadow-[0_0_50px_rgba(139,92,246,0.6)]"></div>
+          <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-500 to-slate-500 blur-sm opacity-80 shadow-[0_0_50px_rgba(139,92,246,0.6)]"></div>
         </div>
         <div className="absolute bottom-40 right-20 animate-float-delayed">
           <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 blur-sm opacity-70 shadow-[0_0_50px_rgba(56,189,248,0.6)]"></div>
@@ -227,8 +228,8 @@ export default function Home() {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="space-y-8"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel text-sm font-bold text-violet-700 shadow-sm backdrop-blur-xl">
-              <Sparkles size={16} className="text-fuchsia-500" />
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel text-sm font-bold text-blue-700 shadow-sm backdrop-blur-xl">
+              <Sparkles size={16} className="text-slate-500" />
               <span>Decentralized Escrow Talent Portal</span>
             </div>
 
@@ -253,51 +254,14 @@ export default function Home() {
 
           {/* 3D Hero Visual Element */}
           <motion.div 
-            initial={{ opacity: 0, scale: 0.8, rotateY: 15 }}
-            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="hidden lg:block relative perspective-1000"
+            className="hidden lg:block relative"
           >
-            <TiltCard className="w-full max-w-md mx-auto">
-              <div className="glass-panel p-8 rounded-[2rem] shadow-2xl relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/10 z-0"></div>
-                <div className="relative z-10 space-y-6">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-violet-500 to-fuchsia-500 p-[2px]">
-                        <div className="w-full h-full bg-white rounded-full flex items-center justify-center font-bold text-violet-600">WS</div>
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-slate-900">Secure Escrow</h4>
-                        <p className="text-xs text-slate-500">Contract #4092</p>
-                      </div>
-                    </div>
-                    <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">Funded</span>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: "0%" }}
-                        animate={{ width: "100%" }}
-                        transition={{ duration: 2, delay: 1 }}
-                        className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
-                      />
-                    </div>
-                    <div className="flex justify-between text-xs font-bold text-slate-400">
-                      <span>Initiated</span>
-                      <span className="text-violet-600">Milestone 1 Complete</span>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-white/60 rounded-xl border border-white/50 backdrop-blur-md">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm font-semibold text-slate-600">Total Value</span>
-                      <span className="text-lg font-black text-slate-900">₹85,000</span>
-                    </div>
-                    <p className="text-[10px] text-slate-400">Funds secured in Razorpay Vault</p>
-                  </div>
-                </div>
-              </div>
-            </TiltCard>
+            <div className="w-full max-w-lg mx-auto">
+              <img src={heroIllustration} alt="Secure Escrow Talent Portal" className="w-full h-auto object-contain transform transition-transform duration-700 animate-float" />
+            </div>
           </motion.div>
         </div>
       </section>
@@ -311,7 +275,7 @@ export default function Home() {
             viewport={{ once: true, margin: "-100px" }}
             className="text-center max-w-3xl mx-auto mb-20 space-y-4"
           >
-            <span className="text-sm font-bold text-violet-600 tracking-widest uppercase">Core Disciplines</span>
+            <span className="text-sm font-bold text-blue-600 tracking-widest uppercase">Core Disciplines</span>
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Harness elite creative and tech</h2>
           </motion.div>
 
@@ -324,9 +288,9 @@ export default function Home() {
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
                 whileHover={{ y: -10, scale: 1.02 }}
-                className="group relative p-1 rounded-3xl bg-gradient-to-b from-slate-100 to-white shadow-lg hover:shadow-2xl hover:shadow-violet-500/10 transition-all duration-300"
+                className="group relative p-1 rounded-3xl bg-gradient-to-b from-slate-100 to-white shadow-lg hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300"
               >
-                <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-10 transition-opacity rounded-3xl z-0 pointer-events-none" style={{ backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }} className={cat.color}></div>
+                <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-10 transition-opacity rounded-3xl z-0 pointer-events-none ${cat.color}`} style={{ backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }}></div>
                 <div className="bg-white h-full w-full rounded-[23px] p-6 flex flex-col justify-between relative z-10 border border-slate-100">
                   <div className="space-y-4">
                     <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${cat.color} text-white flex items-center justify-center shadow-md transform group-hover:rotate-12 transition-transform duration-300`}>
@@ -335,7 +299,7 @@ export default function Home() {
                     <h3 className="text-xl font-bold text-slate-900">{cat.name}</h3>
                     <p className="text-sm text-slate-500 leading-relaxed">{cat.desc}</p>
                   </div>
-                  <div className="mt-8 flex justify-between items-center text-sm font-semibold text-slate-400 group-hover:text-violet-600 transition-colors">
+                  <div className="mt-8 flex justify-between items-center text-sm font-semibold text-slate-400 group-hover:text-blue-600 transition-colors">
                     <span>{cat.count}</span>
                     <ChevronRight size={18} className="transform group-hover:translate-x-1 transition-transform" />
                   </div>
@@ -356,7 +320,7 @@ export default function Home() {
             className="flex flex-col md:flex-row items-start md:items-end justify-between mb-16 gap-4"
           >
             <div className="space-y-3">
-              <span className="text-sm font-bold text-fuchsia-600 uppercase tracking-widest">Active Board</span>
+              <span className="text-sm font-bold text-slate-600 uppercase tracking-widest">Active Board</span>
               <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Vetted opportunities in market</h2>
             </div>
             <Link to={user ? "/dashboard" : "/login"} className="group text-slate-900 font-bold flex items-center gap-2 bg-white border-2 border-slate-900 px-6 py-3 rounded-full text-sm transition-all hover:bg-slate-900 hover:text-white">
@@ -373,17 +337,17 @@ export default function Home() {
                 transition={{ delay: idx * 0.15, type: "spring" }}
                 whileHover={{ y: -10, rotateX: 5, rotateY: -5 }}
                 key={job._id} 
-                className="glass-panel p-8 rounded-3xl cursor-pointer group flex flex-col justify-between min-h-[260px] transform-gpu transition-shadow hover:shadow-2xl hover:shadow-fuchsia-500/10"
+                className="glass-panel p-8 rounded-3xl cursor-pointer group flex flex-col justify-between min-h-[260px] transform-gpu transition-shadow hover:shadow-2xl hover:shadow-slate-500/10"
                 onClick={() => navigate(user ? "/dashboard" : "/login")}
               >
                 <div>
                   <div className="flex justify-between items-start mb-6">
-                    <span className="text-xs font-bold px-3 py-1.5 bg-violet-100 text-violet-700 rounded-full uppercase tracking-wider shadow-inner">
+                    <span className="text-xs font-bold px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full uppercase tracking-wider shadow-inner">
                       {job.category || 'Freelance'}
                     </span>
                     <span className="text-xl font-black text-slate-900">₹{job.budget.toLocaleString('en-IN')}</span>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-violet-600 group-hover:to-fuchsia-600 transition-all line-clamp-2">{job.title}</h3>
+                  <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-slate-600 transition-all line-clamp-2">{job.title}</h3>
                   <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-6">{job.description}</p>
                 </div>
                 <div className="flex items-center justify-between mt-auto pt-6 border-t border-slate-200/50">
@@ -436,7 +400,7 @@ export default function Home() {
               
               <div className="space-y-5 pt-4">
                 {[
-                  "Funds released only after milestone approval",
+                  "Funds released only after mileslate approval",
                   "Digital receipt generation with tax itemization",
                   "Razorpay secure integration & payment simulation"
                 ].map((text, i) => (
@@ -463,11 +427,11 @@ export default function Home() {
             >
               <TiltCard>
                 <div className="glass-panel p-10 rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.08)] relative overflow-hidden border-2 border-white/60">
-                  <div className="absolute -top-32 -right-32 w-64 h-64 bg-violet-400/20 rounded-full blur-3xl pointer-events-none"></div>
+                  <div className="absolute -top-32 -right-32 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl pointer-events-none"></div>
                   
                   <div className="relative z-10 space-y-8">
                     <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
-                      <div className="p-2 bg-violet-100 text-violet-600 rounded-xl"><Calculator size={24} /></div>
+                      <div className="p-2 bg-blue-100 text-blue-600 rounded-xl"><Calculator size={24} /></div>
                       Fee Estimator
                     </h3>
                     
@@ -477,7 +441,7 @@ export default function Home() {
                         <select 
                           value={estimateCategory} 
                           onChange={(e) => setEstimateCategory(e.target.value)}
-                          className="w-full px-5 py-4 bg-white/80 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-violet-500 font-bold text-slate-800 shadow-sm transition-colors cursor-pointer appearance-none"
+                          className="w-full px-5 py-4 bg-white/80 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-500 font-bold text-slate-800 shadow-sm transition-colors cursor-pointer appearance-none"
                         >
                           <option value="Web Design">Web Design & Dev</option>
                           <option value="Video Editing">Video Editing</option>
@@ -489,7 +453,7 @@ export default function Home() {
                       <div>
                         <div className="flex justify-between items-center mb-4">
                           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Freelancer Bid</label>
-                          <span className="font-black text-2xl text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-600">₹{estimateBudget.toLocaleString('en-IN')}</span>
+                          <span className="font-black text-2xl text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-slate-600">₹{estimateBudget.toLocaleString('en-IN')}</span>
                         </div>
                         <input 
                           type="range" 
@@ -498,7 +462,7 @@ export default function Home() {
                           step="5000"
                           value={estimateBudget}
                           onChange={(e) => setEstimateBudget(Number(e.target.value))}
-                          className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-violet-600 shadow-inner"
+                          className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-blue-600 shadow-inner"
                         />
                       </div>
 
@@ -510,7 +474,7 @@ export default function Home() {
                         </div>
                         <div className="flex justify-between text-slate-400">
                           <span>PLATFORM FEE (5%):</span>
-                          <span className="text-fuchsia-400">₹{platformFee.toLocaleString('en-IN')}.00</span>
+                          <span className="text-slate-400">₹{platformFee.toLocaleString('en-IN')}.00</span>
                         </div>
                         <div className="border-t border-dashed border-slate-700 w-full my-4"></div>
                         <div className="flex justify-between text-lg font-black text-white">
@@ -537,7 +501,7 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-20 space-y-4"
           >
-            <span className="text-sm font-bold text-emerald-600 uppercase tracking-widest">Platform Safeguards</span>
+            <span className="text-sm font-bold text-slate-600 uppercase tracking-widest">Platform Safeguards</span>
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Built for unbreakable trust</h2>
           </motion.div>
           
@@ -549,8 +513,8 @@ export default function Home() {
               whileHover={{ scale: 1.02 }}
               className="md:col-span-2 glass-panel p-10 rounded-[2rem] flex flex-col justify-center relative overflow-hidden"
             >
-              <div className="absolute -right-10 -bottom-10 opacity-10 text-emerald-500"><ShieldCheck size={200} /></div>
-              <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center shadow-md mb-6 relative z-10"><ShieldCheck size={28} /></div>
+              <div className="absolute -right-10 -bottom-10 opacity-10 text-slate-500"><ShieldCheck size={200} /></div>
+              <div className="w-14 h-14 bg-slate-100 text-slate-600 rounded-2xl flex items-center justify-center shadow-md mb-6 relative z-10"><ShieldCheck size={28} /></div>
               <h3 className="text-2xl font-black text-slate-900 mb-3 relative z-10">Military-Grade Escrow</h3>
               <p className="text-slate-600 font-medium leading-relaxed relative z-10 max-w-md">Payments are deposited to secure virtual accounts before work begins. Funds are strictly released only after client approval.</p>
             </motion.div>
@@ -563,7 +527,7 @@ export default function Home() {
               whileHover={{ scale: 1.02 }}
               className="glass-panel p-10 rounded-[2rem] bg-gradient-to-b from-white to-slate-100"
             >
-              <div className="w-14 h-14 bg-violet-100 text-violet-600 rounded-2xl flex items-center justify-center shadow-md mb-6"><Zap size={28} /></div>
+              <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-md mb-6"><Zap size={28} /></div>
               <h3 className="text-xl font-black text-slate-900 mb-3">Vetted Matches</h3>
               <p className="text-slate-600 text-sm font-medium leading-relaxed">System-verified freelancers ensure top quality execution.</p>
             </motion.div>
@@ -576,7 +540,7 @@ export default function Home() {
               whileHover={{ scale: 1.02 }}
               className="glass-panel p-10 rounded-[2rem] bg-gradient-to-b from-white to-slate-100"
             >
-              <div className="w-14 h-14 bg-fuchsia-100 text-fuchsia-600 rounded-2xl flex items-center justify-center shadow-md mb-6"><Lock size={28} /></div>
+              <div className="w-14 h-14 bg-slate-100 text-slate-600 rounded-2xl flex items-center justify-center shadow-md mb-6"><Lock size={28} /></div>
               <h3 className="text-xl font-black text-slate-900 mb-3">Encrypted Comms</h3>
               <p className="text-slate-600 text-sm font-medium leading-relaxed">End-to-end encryption for all project chats and file sharing.</p>
             </motion.div>
@@ -597,25 +561,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-16 bg-white text-slate-500 text-center border-t border-slate-100 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 space-y-6">
-          <div className="text-2xl font-black text-slate-900 tracking-tight">WorkSphere</div>
-          <p className="text-sm font-medium text-slate-400">&copy; {new Date().getFullYear()} WorkSphere. Built with cryptographic verification.</p>
-          <div className="flex justify-center gap-8 text-sm font-bold text-slate-400 pt-4">
-            <button onClick={() => setActivePolicy(policyData.privacy)} className="hover:text-violet-600 transition-colors">Privacy</button>
-            <button onClick={() => setActivePolicy(policyData.terms)} className="hover:text-violet-600 transition-colors">Terms</button>
-            <button onClick={() => setActivePolicy(policyData.escrow)} className="hover:text-violet-600 transition-colors">Escrow</button>
-          </div>
-        </div>
-      </footer>
-      
-      <PolicyModal 
-        isOpen={!!activePolicy} 
-        onClose={() => setActivePolicy(null)} 
-        policy={activePolicy} 
-      />
     </div>
   );
 }

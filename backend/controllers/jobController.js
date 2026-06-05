@@ -55,7 +55,36 @@ exports.getMyJobs = async (req, res) => {
 exports.getJobMessages = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const messages = await Message.find({ job: jobId }).sort({ createdAt: 1 });
+    const { freelancerId } = req.query;
+    
+    let query = { job: jobId };
+    
+    if (freelancerId) {
+      query.$or = [
+        { sender: req.user.id, receiver: freelancerId },
+        { sender: freelancerId, receiver: req.user.id }
+      ];
+    } else if (req.user.role === 'freelancer') {
+      const job = await Job.findById(jobId);
+      if (job) {
+        query.$or = [
+          { sender: req.user.id, receiver: job.client },
+          { sender: job.client, receiver: req.user.id }
+        ];
+      }
+    } else {
+      const job = await Job.findById(jobId);
+      if (job && job.selectedFreelancer) {
+        query.$or = [
+          { sender: req.user.id, receiver: job.selectedFreelancer },
+          { sender: job.selectedFreelancer, receiver: req.user.id }
+        ];
+      } else {
+        return res.json([]);
+      }
+    }
+
+    const messages = await Message.find(query).sort({ createdAt: 1 });
     
     // Decrypt messages for authorized client reading
     const decryptedMessages = messages.map(msg => {
@@ -259,5 +288,38 @@ exports.getAiMatches = async (req, res) => {
   } catch (error) {
     console.error('AI Matcher Error:', error.message);
     res.status(500).json({ message: 'Failed to generate AI matches' });
+  }
+};
+
+exports.updateBid = async (req, res) => {
+  try {
+    const { bidId } = req.params;
+    const { amount, proposal } = req.body;
+    
+    const bid = await Bid.findById(bidId);
+    if (!bid) {
+      return res.status(404).json({ message: 'Bid not found' });
+    }
+
+    if (bid.freelancer.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    const job = await Job.findById(bid.job);
+    if (!job || job.status !== 'open') {
+      return res.status(400).json({ message: 'Job is no longer open for bidding' });
+    }
+
+    if (amount <= job.budget) {
+      return res.status(400).json({ message: `Bid price must be greater than target budget (₹${job.budget})` });
+    }
+
+    if (amount) bid.amount = amount;
+    if (proposal) bid.proposal = proposal;
+    await bid.save();
+
+    res.json({ message: 'Bid updated successfully', bid });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

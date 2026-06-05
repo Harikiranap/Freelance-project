@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle, AlertTriangle } from 'lucide-react';
 
@@ -27,10 +28,19 @@ export default function ConfirmModal({
     ? (inputType === 'url' ? !isValidUrl(inputValue.trim()) : !inputValue.trim())
     : false;
 
-  return (
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isOpen]);
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
           {/* Backdrop overlay */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -53,7 +63,7 @@ export default function ConfirmModal({
               initial={{ rotate: -10, scale: 0.8 }}
               animate={{ rotate: 0, scale: 1 }}
               transition={{ type: 'spring', delay: 0.1 }}
-              className="w-16 h-16 bg-violet-50 border border-violet-100 text-violet-600 rounded-2xl flex items-center justify-center mb-4 shadow-sm"
+              className="w-16 h-16 bg-blue-50 border border-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-sm"
             >
               <HelpCircle size={32} className="animate-pulse" />
             </motion.div>
@@ -63,7 +73,7 @@ export default function ConfirmModal({
               {title}
             </h3>
             
-            <p className="text-sm font-semibold text-violet-600 mb-4 tracking-wide uppercase">
+            <p className="text-sm font-semibold text-blue-600 mb-4 tracking-wide uppercase">
               {message}
             </p>
             
@@ -78,7 +88,7 @@ export default function ConfirmModal({
                   value={inputValue}
                   onChange={(e) => onInputChange(e.target.value)}
                   placeholder={inputPlaceholder}
-                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all text-sm"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
                   required
                 />
               </div>
@@ -95,7 +105,7 @@ export default function ConfirmModal({
               <button
                 onClick={onConfirm}
                 disabled={isConfirmDisabled}
-                className="flex-1 py-3 px-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:from-slate-400 disabled:to-slate-400 text-white font-bold rounded-2xl text-sm shadow-lg hover:shadow-xl hover:shadow-violet-500/10 transition-all active:scale-95 disabled:shadow-none disabled:active:scale-100"
+                className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-slate-600 hover:from-blue-700 hover:to-slate-700 disabled:from-slate-400 disabled:to-slate-400 text-white font-bold rounded-2xl text-sm shadow-lg hover:shadow-xl hover:shadow-blue-500/10 transition-all active:scale-95 disabled:shadow-none disabled:active:scale-100"
               >
                 Yes, Continue
               </button>
@@ -103,6 +113,7 @@ export default function ConfirmModal({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

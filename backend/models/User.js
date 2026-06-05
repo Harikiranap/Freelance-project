@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema(
     location: { type: String },
     rating: { type: Number, default: 0 },
     profileCompleteness: { type: Number, default: 0 },
+    hourlyRate: { type: Number, default: 0 },
     
     // Client specific
     companyName: { type: String },

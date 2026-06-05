@@ -32,7 +32,7 @@ export default function PaymentPage() {
   const fetchJobDetails = async () => {
     try {
       setLoading(true);
-      const token = user?.token || localStorage.getItem('token');
+      const token = user?.token || sessionStorage.getItem('token');
       const res = await axios.get(`http://localhost:5000/api/jobs/job/${jobId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -60,7 +60,7 @@ export default function PaymentPage() {
     setShowConfirmModal(false);
     setIsPaying(true);
     try {
-      const token = user?.token || localStorage.getItem('token');
+      const token = user?.token || sessionStorage.getItem('token');
       
       // Step 1: Create Order
       const orderRes = await axios.post('http://localhost:5000/api/payments/create-order', { jobId }, {
@@ -84,6 +84,7 @@ export default function PaymentPage() {
             toast.success('🎉 Payment Verified! Escrow is fully funded. You will receive an email receipt shortly.');
             fetchJobDetails(); // Reload job data
             setIsPaying(false);
+            setTimeout(() => navigate(`/job/${jobId}`), 3000); // Redirect to job section
           } catch (verifyErr) {
             toast.error('Mock payment verification failed.');
             setIsPaying(false);
@@ -124,6 +125,7 @@ export default function PaymentPage() {
             });
             toast.success('🎉 Escrow funded successfully! You will receive an email receipt shortly.');
             fetchJobDetails();
+            setTimeout(() => navigate(`/job/${jobId}`), 3000); // Redirect to job section
           } catch (err) {
             toast.error('Payment verification failed. Contact support.');
           } finally {
@@ -151,7 +153,7 @@ export default function PaymentPage() {
   if (loading) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center gap-3">
-        <Loader2 size={40} className="animate-spin text-violet-600" />
+        <Loader2 size={40} className="animate-spin text-blue-600" />
         <p className="text-slate-500 font-medium text-sm">Generating real-time invoice and contract details...</p>
       </div>
     );
@@ -161,7 +163,7 @@ export default function PaymentPage() {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center gap-3">
         <p className="text-slate-500 font-medium">Job contract details could not be found.</p>
-        <button onClick={() => navigate('/dashboard')} className="px-5 py-2 bg-violet-600 text-white rounded-xl">Back to Workspace</button>
+        <button onClick={() => navigate('/dashboard')} className="px-5 py-2 bg-blue-600 text-white rounded-xl">Back to Workspace</button>
       </div>
     );
   }
@@ -195,7 +197,7 @@ export default function PaymentPage() {
           <ArrowLeft size={16} /> Back to Dashboard
         </button>
         <div className="text-right">
-          <span className="text-xs font-bold text-violet-600 uppercase tracking-widest bg-violet-50 border border-violet-100 px-3 py-1 rounded-full">
+          <span className="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">
             Secure Escrow Transaction
           </span>
         </div>
@@ -208,14 +210,14 @@ export default function PaymentPage() {
           <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
             
             <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-              <Briefcase className="text-violet-600" size={24} /> Contract Details
+              <Briefcase className="text-blue-600" size={24} /> Contract Details
             </h2>
 
             {/* Job Title / Meta */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="px-2.5 py-0.5 rounded bg-violet-100 text-violet-700 text-xs font-bold uppercase tracking-wider">
+                  <span className="px-2.5 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider">
                     {category}
                   </span>
                   <h3 className="text-lg font-bold text-slate-800 mt-2">{job.title}</h3>
@@ -232,7 +234,7 @@ export default function PaymentPage() {
               {/* Client Profile */}
               <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-3">
                 <div className="flex items-center gap-2.5">
-                  <Avatar name={clientName} size={40} className="border-violet-100 text-violet-600" />
+                  <Avatar name={clientName} size={40} className="border-blue-100 text-blue-600" />
                   <div>
                     <h4 className="font-bold text-sm text-slate-800 truncate">{clientName}</h4>
                     <p className="text-[10px] text-slate-400 font-semibold uppercase">{clientCompany}</p>
@@ -247,7 +249,7 @@ export default function PaymentPage() {
               {/* Freelancer Profile */}
               <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-3">
                 <div className="flex items-center gap-2.5">
-                  <Avatar name={freelancerName} size={40} className="border-fuchsia-100 text-fuchsia-600" />
+                  <Avatar name={freelancerName} size={40} className="border-slate-100 text-slate-600" />
                   <div>
                     <h4 className="font-bold text-sm text-slate-800 truncate">{freelancerName}</h4>
                     <p className="text-[10px] text-slate-400 font-semibold uppercase">Verified Freelancer</p>
@@ -264,8 +266,8 @@ export default function PaymentPage() {
             </div>
 
             {/* Escrow Mechanism Explainer Card */}
-            <div className="p-5 rounded-2xl border border-violet-100 bg-violet-50/30 flex gap-4">
-              <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center flex-shrink-0">
+            <div className="p-5 rounded-2xl border border-blue-100 bg-blue-50/30 flex gap-4">
+              <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
                 <ShieldCheck size={20} />
               </div>
               <div className="space-y-1">
@@ -280,16 +282,16 @@ export default function PaymentPage() {
             <div className="space-y-3">
               <h4 className="font-bold text-sm text-slate-800">Contract Lifecycle progress</h4>
               <div className="grid grid-cols-3 gap-2">
-                <div className="p-2.5 rounded-xl border border-violet-200 bg-violet-50/30 text-center">
-                  <div className="text-xs font-bold text-violet-700">1. Hired Contract</div>
-                  <div className="text-[10px] text-violet-500 mt-0.5">Agreement Confirmed</div>
+                <div className="p-2.5 rounded-xl border border-blue-200 bg-blue-50/30 text-center">
+                  <div className="text-xs font-bold text-blue-700">1. Hired Contract</div>
+                  <div className="text-[10px] text-blue-500 mt-0.5">Agreement Confirmed</div>
                 </div>
-                <div className={`p-2.5 rounded-xl border text-center ${job.paymentStatus !== 'pending' ? 'border-violet-200 bg-violet-50/30 text-violet-700' : 'border-slate-200 text-slate-400'}`}>
-                  <div className={`text-xs font-bold ${job.paymentStatus !== 'pending' ? 'text-violet-700' : ''}`}>2. Fund Escrow</div>
+                <div className={`p-2.5 rounded-xl border text-center ${job.paymentStatus !== 'pending' ? 'border-blue-200 bg-blue-50/30 text-blue-700' : 'border-slate-200 text-slate-400'}`}>
+                  <div className={`text-xs font-bold ${job.paymentStatus !== 'pending' ? 'text-blue-700' : ''}`}>2. Fund Escrow</div>
                   <div className="text-[10px] mt-0.5">{job.paymentStatus !== 'pending' ? 'Completed & Held' : 'Awaiting Payment'}</div>
                 </div>
-                <div className={`p-2.5 rounded-xl border text-center ${job.status === 'completed' ? 'border-violet-200 bg-violet-50/30 text-violet-700' : 'border-slate-200 text-slate-400'}`}>
-                  <div className={`text-xs font-bold ${job.status === 'completed' ? 'text-violet-700' : ''}`}>3. Project Payout</div>
+                <div className={`p-2.5 rounded-xl border text-center ${job.status === 'completed' ? 'border-blue-200 bg-blue-50/30 text-blue-700' : 'border-slate-200 text-slate-400'}`}>
+                  <div className={`text-xs font-bold ${job.status === 'completed' ? 'text-blue-700' : ''}`}>3. Project Payout</div>
                   <div className="text-[10px] mt-0.5">{job.status === 'completed' ? 'Funds Released' : 'Held until approval'}</div>
                 </div>
               </div>
@@ -397,11 +399,11 @@ export default function PaymentPage() {
             {/* Stamp indicator watermarked */}
             <div className="flex justify-center my-1">
               {job.paymentStatus === 'pending' ? (
-                <div className="border-2 border-dashed border-amber-500 text-amber-500 font-extrabold text-sm px-6 py-1.5 rotate-[-4deg] rounded tracking-widest uppercase">
+                <div className="border-2 border-dashed border-blue-500 text-blue-500 font-extrabold text-sm px-6 py-1.5 rotate-[-4deg] rounded tracking-widest uppercase">
                   UNPAID / ESCROW PENDING
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-violet-600 text-violet-600 font-extrabold text-sm px-6 py-1.5 rotate-[-4deg] rounded tracking-widest uppercase flex items-center gap-1 animate-pulse">
+                <div className="border-2 border-dashed border-blue-600 text-blue-600 font-extrabold text-sm px-6 py-1.5 rotate-[-4deg] rounded tracking-widest uppercase flex items-center gap-1 animate-pulse">
                   <CheckCircle2 size={16} /> PAID & ESCROWED
                 </div>
               )}
@@ -427,7 +429,7 @@ export default function PaymentPage() {
               whileTap={{ scale: 0.98 }}
               onClick={handlePaymentInitiation}
               disabled={isPaying}
-              className="mt-6 w-full max-w-sm py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-bold rounded-2xl shadow-xl hover:shadow-violet-500/20 transition-all flex items-center justify-center gap-2.5 disabled:opacity-50"
+              className="mt-6 w-full max-w-sm py-4 bg-gradient-to-r from-blue-600 to-slate-600 hover:from-blue-700 hover:to-slate-700 text-white font-bold rounded-2xl shadow-xl hover:shadow-blue-500/20 transition-all flex items-center justify-center gap-2.5 disabled:opacity-50"
             >
               {isPaying ? (
                 <>
@@ -442,7 +444,7 @@ export default function PaymentPage() {
           )}
 
           {job.paymentStatus !== 'pending' && (
-            <div className="mt-4 p-3 bg-violet-50 border border-violet-200 text-violet-800 rounded-xl text-center text-xs font-semibold max-w-sm">
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-center text-xs font-semibold max-w-sm">
               🚀 Escrow funds are secured! The freelancer can now proceed to deliver the project work.
             </div>
           )}

@@ -6,7 +6,7 @@ export default function Loading() {
       <motion.div 
         animate={{ rotate: 360 }}
         transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-        className="w-16 h-16 border-4 border-violet-200 border-t-violet-600 rounded-full mb-4"
+        className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full mb-4"
       />
       <motion.h2 
         initial={{ opacity: 0 }}

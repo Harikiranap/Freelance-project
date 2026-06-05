@@ -1,12 +1,15 @@
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { Suspense, lazy, useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, LogOut, Settings, ShieldCheck, ChevronDown } from 'lucide-react';
-import { Toaster } from 'react-hot-toast';
+import toast, { Toaster, ToastBar } from 'react-hot-toast';
 import Loading from './components/Loading';
+import SmoothScroll from './components/SmoothScroll';
+import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Avatar from './components/Avatar';
 import AuthModal from './components/AuthModal';
+import Footer from './components/Footer';
 const Home = lazy(() => import('./pages/Home'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Chat = lazy(() => import('./pages/Chat'));
@@ -16,6 +19,7 @@ const EditProfile = lazy(() => import('./pages/EditProfile'));
 const AboutUs = lazy(() => import('./pages/AboutUs'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const PaymentPage = lazy(() => import('./pages/PaymentPage'));
+const JobDetails = lazy(() => import('./pages/JobDetails'));
 
 function AppNav() {
   const { user, logout, openAuth } = useAuth();
@@ -40,25 +44,25 @@ function AppNav() {
   };
 
   return (
-    <nav className="w-full bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-100">
+    <nav className="w-full bg-white/80 backdrop-blur-md shadow-sm fixed top-0 left-0 z-50 border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link to="/">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="text-2xl font-extrabold text-violet-600 tracking-tight cursor-pointer">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="text-2xl font-extrabold text-blue-600 tracking-tight cursor-pointer">
               WorkSphere
             </motion.div>
           </Link>
           <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-            <Link to="/" className="hover:text-violet-600 transition-colors">Home</Link>
-            <Link to="/about" className="hover:text-violet-600 transition-colors">About Us</Link>
-            {user && <Link to="/dashboard" className="hover:text-violet-600 transition-colors">Jobs</Link>}
-            {user && <Link to="/chat" className="hover:text-violet-600 transition-colors">Messages</Link>}
+            <Link to="/" className="hover:text-blue-600 transition-colors">Home</Link>
+            <Link to="/about" className="hover:text-blue-600 transition-colors">About Us</Link>
+            {user && <Link to="/dashboard" className="hover:text-blue-600 transition-colors">Jobs</Link>}
+            {user && <Link to="/chat" className="hover:text-blue-600 transition-colors">Messages</Link>}
           </div>
         </div>
 
         <div className="flex items-center gap-4">
           {!user ? (
-            <button onClick={() => openAuth('login')} className="text-sm font-semibold px-6 py-2.5 bg-violet-600 text-white rounded-full hover:bg-violet-700 transition-all shadow-md hover:shadow-lg">
+            <button onClick={() => openAuth('login')} className="text-sm font-semibold px-6 py-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all shadow-md hover:shadow-lg">
               Sign In / Join
             </button>
           ) : (
@@ -90,7 +94,7 @@ function AppNav() {
                       </Link>
                       
                       {user.role === 'admin' && (
-                        <Link to="/admin" onClick={() => setDropdownOpen(false)} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-violet-700 hover:bg-violet-50 rounded-lg transition-colors">
+                        <Link to="/admin" onClick={() => setDropdownOpen(false)} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
                           <ShieldCheck size={16} /> Admin Panel
                         </Link>
                       )}
@@ -145,6 +149,16 @@ function AdminRoute({ children }) {
   return children;
 }
 
+function LoginRedirect() {
+  const { openAuth } = useAuth();
+  const navigate = useNavigate();
+  useEffect(() => {
+    openAuth('login');
+    navigate('/', { replace: true });
+  }, [openAuth, navigate]);
+  return null;
+}
+
 function AppRoutes() {
   return (
     <main className="w-full">
@@ -152,6 +166,7 @@ function AppRoutes() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
+          <Route path="/login" element={<LoginRedirect />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/verify-otp" element={<VerifyOtp />} />
           
@@ -178,11 +193,15 @@ function AppRoutes() {
             path="/payment/:jobId" 
             element={<ProtectedRoute><div className="max-w-7xl mx-auto px-4 py-8"><PaymentPage /></div></ProtectedRoute>} 
           />
+          <Route 
+            path="/job/:id" 
+            element={<ProtectedRoute><JobDetails /></ProtectedRoute>} 
+          />
 
           {/* Admin Routes */}
           <Route 
             path="/admin" 
-            element={<AdminRoute><div className="max-w-7xl mx-auto px-4 py-8"><AdminPanel /></div></AdminRoute>} 
+            element={<AdminRoute><AdminPanel /></AdminRoute>} 
           />
         </Routes>
       </Suspense>
@@ -218,7 +237,7 @@ function CookieBanner() {
         <p className="text-xs text-slate-400 mt-1">We use cookies to optimize your platform experience, verify user sessions, and secure escrow payments.</p>
       </div>
       <div className="flex gap-2 justify-end">
-        <button onClick={handleAccept} className="px-4 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors">
+        <button onClick={handleAccept} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors">
           Accept All
         </button>
       </div>
@@ -226,38 +245,66 @@ function CookieBanner() {
   );
 }
 
+function AppContent() {
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith('/admin');
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
+      <AppNav />
+      <AuthModal />
+      <SmoothScroll>
+        <div className={`pt-16 flex flex-col min-h-screen ${isAdmin ? 'h-[calc(100vh-64px)] overflow-hidden' : ''}`}>
+          <AppRoutes />
+          {!isAdmin && <CookieBanner />}
+          {!isAdmin && <Footer />}
+        </div>
+      </SmoothScroll>
+    </div>
+  );
+}
+
 function App() {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTop />
         <Toaster 
           position="top-right"
           toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#333',
-              color: '#fff',
-              borderRadius: '10px',
-              padding: '16px',
-            },
-            success: {
-              style: {
-                background: '#10b981',
-              },
-            },
-            error: {
-              style: {
-                background: '#ef4444',
-              },
-            },
+            duration: 4000,
           }}
-        />
-        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
-          <AppNav />
-          <AuthModal />
-          <AppRoutes />
-          <CookieBanner />
-        </div>
+        >
+          {(t) => (
+            <ToastBar toast={t}>
+              {({ icon, message }) => (
+                <div className="relative flex items-center w-full pr-4 py-0.5 min-w-[200px]">
+                  {icon}
+                  <div className="flex-1 text-xs font-semibold mr-2 text-slate-800">{message}</div>
+                  {t.type !== 'loading' && (
+                    <button 
+                      onClick={() => toast.dismiss(t.id)} 
+                      className="text-slate-400 hover:text-slate-600 text-xs font-extrabold focus:outline-none p-1 hover:bg-slate-100 rounded transition-colors ml-auto cursor-pointer"
+                      style={{ background: 'none', border: 'none' }}
+                      title="Close"
+                    >
+                      ✕
+                    </button>
+                  )}
+                  {t.type !== 'loading' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-[3px] overflow-hidden rounded-b">
+                      <div 
+                        className={`h-full ${t.type === 'error' ? 'bg-red-500' : 'bg-emerald-500'} toast-progress-bar`}
+                        style={{ animationDuration: `${t.duration || 4000}ms` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </ToastBar>
+          )}
+        </Toaster>
+        <AppContent />
       </Router>
     </AuthProvider>
   );

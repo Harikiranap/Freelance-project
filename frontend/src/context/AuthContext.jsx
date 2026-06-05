@@ -24,7 +24,7 @@ const decodeToken = (token) => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token') || sessionStorage.getItem('token') || null);
+  const [token, setToken] = useState(sessionStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
   
   // Auth Modal State
@@ -48,12 +48,11 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, [token]);
 
-  const login = (newToken, userData, rememberMe = true) => {
-    if (rememberMe) {
-      localStorage.setItem('token', newToken);
-    } else {
-      sessionStorage.setItem('token', newToken);
-    }
+  const login = (newToken, userData) => {
+    sessionStorage.setItem('token', newToken);
+    // Ensure any leftover localStorage tokens from before the fix are cleared
+    localStorage.removeItem('token');
+    
     axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     const decoded = decodeToken(newToken);
     setUser({ ...userData, ...decoded });

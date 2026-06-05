@@ -84,7 +84,7 @@ export default function CompleteProfile() {
         className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-xl border border-slate-100"
       >
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-violet-100 text-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">🚀</div>
+          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">🚀</div>
           <h2 className="text-3xl font-bold text-slate-900 mb-2">Almost there!</h2>
           <p className="text-slate-500 text-sm">Complete your {user?.role} profile to get started.</p>
         </div>
@@ -97,7 +97,7 @@ export default function CompleteProfile() {
               </label>
               <input
                 type="tel"
-                className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+                className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 placeholder="10 digits e.g. 9876543210"
                 value={formData.phoneNumber}
                 onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
@@ -111,7 +111,7 @@ export default function CompleteProfile() {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder="Your Company Name"
                   value={formData.companyName}
                   onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
@@ -126,7 +126,7 @@ export default function CompleteProfile() {
                 </label>
                 <input
                   type="url"
-                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder="https://github.com/yourname"
                   value={formData.portfolioUrl}
                   onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
@@ -144,7 +144,7 @@ export default function CompleteProfile() {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder="React, Node.js, Python, UI/UX"
                   value={formData.skills}
                   onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
@@ -157,7 +157,7 @@ export default function CompleteProfile() {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder="yourname@okicici"
                   value={formData.upiId}
                   onChange={(e) => setFormData({ ...formData, upiId: e.target.value })}
@@ -170,7 +170,7 @@ export default function CompleteProfile() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 mt-2 bg-violet-600 hover:bg-violet-700 disabled:bg-violet-400 text-white font-semibold rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            className="w-full py-3 mt-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShieldCheck, FileText, Landmark } from 'lucide-react';
 
@@ -7,7 +8,16 @@ export default function PolicyModal({ isOpen, onClose, policy }) {
 
   const Icon = policy.type === 'privacy' ? ShieldCheck : policy.type === 'escrow' ? Landmark : FileText;
 
-  return (
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isOpen]);
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
@@ -35,7 +45,7 @@ export default function PolicyModal({ isOpen, onClose, policy }) {
             </button>
 
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center shadow-sm">
+              <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shadow-sm">
                 <Icon size={24} />
               </div>
               <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">{policy.title}</h2>
@@ -56,6 +66,7 @@ export default function PolicyModal({ isOpen, onClose, policy }) {
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

@@ -2,7 +2,7 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { encrypt } = require('../utils/crypto');
-const nodemailer = require('nodemailer');
+const { sendEmail } = require('../utils/email');
 
 const generateToken = (user) => {
   return jwt.sign({ 
@@ -16,22 +16,6 @@ const generateToken = (user) => {
     expiresIn: '30d',
   });
 };
-
-// Setup Nodemailer for OTP (using ethereal email for testing purposes)
-// In production, configure this with real SMTP (Gmail, SendGrid)
-let transporter;
-nodemailer.createTestAccount().then(account => {
-  transporter = nodemailer.createTransport({
-    host: account.smtp.host,
-    port: account.smtp.port,
-    secure: account.smtp.secure,
-    auth: {
-      user: account.user,
-      pass: account.pass
-    }
-  });
-  console.log("Mock Email Setup Completed. Check ethereal.email for OTPs.");
-});
 
 exports.register = async (req, res) => {
   try {
@@ -68,15 +52,11 @@ exports.register = async (req, res) => {
 
     if (user) {
       // Send OTP via email
-      if (transporter) {
-        const info = await transporter.sendMail({
-          from: '"WorkSphere" <noreply@worksphere.com>',
-          to: user.email,
-          subject: "Your Verification Code",
-          text: `Your OTP is: ${otp}. It expires in 10 minutes.`,
-        });
-        console.log("OTP Email Sent! View it here: " + nodemailer.getTestMessageUrl(info));
-      }
+      await sendEmail(
+        user.email,
+        "Your Verification Code",
+        `Your OTP is: ${otp}. It expires in 10 minutes.`
+      );
 
       res.status(201).json({
         message: 'User registered. Please verify OTP sent to email.',

@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth');
 const jobRoutes = require('./routes/jobs');
 const paymentRoutes = require('./routes/payments');
 const adminRoutes = require('./routes/admin');
+const userRoutes = require('./routes/users');
 const http = require('http');
 const { Server } = require('socket.io');
 
@@ -27,6 +28,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/users', userRoutes);
 
 // Simple test route
 app.get('/', (req, res) => {
