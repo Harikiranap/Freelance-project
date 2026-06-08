@@ -3,7 +3,16 @@ const nodemailer = require('nodemailer');
 let transporter;
 
 const setupTransporter = async () => {
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS
+      }
+    });
+    console.log("Real Email Setup Completed with Gmail credentials.");
+  } else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT || 587,
@@ -15,6 +24,7 @@ const setupTransporter = async () => {
     });
     console.log("Real Email Setup Completed with provided credentials.");
   } else {
+    // Fallback to test account
     const account = await nodemailer.createTestAccount();
     transporter = nodemailer.createTransport({
       host: account.smtp.host,

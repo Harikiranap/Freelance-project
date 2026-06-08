@@ -11,6 +11,7 @@ const jobRoutes = require('./routes/jobs');
 const paymentRoutes = require('./routes/payments');
 const adminRoutes = require('./routes/admin');
 const userRoutes = require('./routes/users');
+const reviewRoutes = require('./routes/reviews');
 const http = require('http');
 const { Server } = require('socket.io');
 
@@ -27,8 +28,10 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/payments', paymentRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/contact', require('./routes/contact'));
 app.use('/api/users', userRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Simple test route
 app.get('/', (req, res) => {
@@ -47,7 +50,9 @@ const io = new Server(server, {
 });
 
 const Message = require('./models/Message');
+const User = require('./models/User');
 const { encrypt } = require('./utils/crypto');
+const { sendEmail } = require('./utils/email');
 
 // Regex to detect personal details
 const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
@@ -58,14 +63,14 @@ io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
   
   // Join a room based on Job ID (so client and freelancer chat in a specific job context)
-  socket.on('join_room', (jobId) => {
-    socket.join(jobId);
-    console.log(`User joined room: ${jobId}`);
+  socket.on('join_room', (roomName) => {
+    socket.join(roomName);
+    console.log(`User joined room: ${roomName}`);
   });
 
   socket.on('send_message', async (data) => {
-    // data expected: { senderId, receiverId, jobId, content }
-    const { senderId, receiverId, jobId, content } = data;
+    // data expected: { senderId, receiverId, jobId, content, roomName }
+    const { senderId, receiverId, jobId, content, roomName } = data;
 
     // Filter personal info
     if (emailRegex.test(content) || phoneRegex.test(content) || upiRegex.test(content)) {
@@ -86,7 +91,7 @@ io.on('connection', (socket) => {
       });
 
       // Broadcast to room (sending decrypted/plain text to clients, keeping DB encrypted at rest)
-      io.to(jobId).emit('receive_message', {
+      io.to(roomName || jobId).emit('receive_message', {
         _id: message._id,
         sender: senderId,
         receiver: receiverId,
@@ -94,6 +99,26 @@ io.on('connection', (socket) => {
         content: content, // Decrypted/plain text for frontend display
         createdAt: message.createdAt
       });
+
+      // Check if receiver is in the room
+      const roomClients = io.sockets.adapter.rooms.get(roomName || jobId);
+      if (!roomClients || roomClients.size < 2) {
+        // Receiver is likely offline, send email notification
+        const receiver = await User.findById(receiverId);
+        if (receiver && receiver.email) {
+          sendEmail(
+            receiver.email,
+            'New Message on WorkSphere',
+            'You have received a new message regarding your project.',
+            `<div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+               <h2>WorkSphere Notification</h2>
+               <p>You have received a new secure message.</p>
+               <br/>
+               <a href="http://localhost:5173/dashboard" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login to Reply</a>
+             </div>`
+          );
+        }
+      }
     } catch (err) {
       console.error('Error saving message:', err);
     }

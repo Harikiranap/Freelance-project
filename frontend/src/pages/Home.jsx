@@ -188,7 +188,8 @@ export default function Home() {
     const fetchJobs = async () => {
       try {
         const res = await axios.get('http://localhost:5000/api/jobs');
-        setJobs(res.data.slice(0, 3));
+        const fetchedJobs = res.data.jobs ? res.data.jobs : res.data;
+        setJobs(fetchedJobs.slice(0, 6));
       } catch (err) {
         console.error("Failed to load jobs");
       }

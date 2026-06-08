@@ -69,10 +69,16 @@ export default function Dashboard() {
   const [isPaying, setIsPaying] = useState(null);
   const [isReleasing, setIsReleasing] = useState(null);
   const [isSubmittingWork, setIsSubmittingWork] = useState(null);
+  const [isDisputing, setIsDisputing] = useState(null);
 
   // AI Matching States
   const [aiMatches, setAiMatches] = useState({});
   const [loadingAi, setLoadingAi] = useState(null);
+
+  // Review State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ jobId: null, rating: 5, comment: '' });
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -99,7 +105,8 @@ export default function Dashboard() {
     try {
       setLoading(true);
       const res = await axios.get('http://localhost:5000/api/jobs');
-      setJobs(res.data);
+      const fetchedJobs = res.data.jobs ? res.data.jobs : res.data;
+      setJobs(fetchedJobs);
     } catch (err) {
       console.error("Failed to fetch jobs", err);
       toast.error("Failed to fetch jobs list.");
@@ -285,9 +292,51 @@ export default function Dashboard() {
     }
   };
 
+  const handleDisputeClick = (jobId) => {
+    triggerConfirm(
+      "Raise Dispute",
+      "Are you sure you want to open a dispute? Our admin team will investigate.",
+      () => executeDisputeJob(jobId)
+    );
+  };
+
+  const executeDisputeJob = async (jobId) => {
+    setIsDisputing(jobId);
+    try {
+      const token = user?.token || sessionStorage.getItem('token');
+      await axios.post(`http://localhost:5000/api/jobs/${jobId}/dispute`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Dispute raised successfully. Admin will review shortly.');
+      fetchMyJobs();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to raise dispute');
+    } finally {
+      setIsDisputing(null);
+    }
+  };
+
   // Navigate to message room contextually
   const handleChatTransition = (jobId) => {
     navigate('/chat', { state: { jobId } });
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmittingReview(true);
+    try {
+      const token = user?.token || sessionStorage.getItem('token');
+      await axios.post('http://localhost:5000/api/reviews', reviewForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Review submitted successfully!');
+      setShowReviewModal(false);
+      setReviewForm({ jobId: null, rating: 5, comment: '' });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit review');
+    } finally {
+      setIsSubmittingReview(false);
+    }
   };
 
   return (
@@ -313,7 +362,10 @@ export default function Dashboard() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">WorkSphere Portal</h1>
+          <div className="flex items-center gap-3">
+            <img src="/icon-transparent.png.png" alt="WorkSphere Logo" className="h-10 w-auto" />
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">WorkSphere Portal</h1>
+          </div>
           <p className="text-slate-500 mt-1">Collaborate securely using AI matches, encrypted chat, and escrow payments.</p>
         </div>
         
@@ -382,9 +434,21 @@ export default function Dashboard() {
       ) : activeTab === 'discover' ? (
         // Explore/Discover Tab
         loading ? (
-          <div className="p-20 text-center flex flex-col items-center justify-center gap-3">
-            <Loader2 size={36} className="animate-spin text-blue-600" />
-            <p className="text-slate-500 text-sm font-medium">Scanning network for active projects...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between h-64 animate-pulse">
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-24 h-6 bg-slate-200 rounded-full"></div>
+                    <div className="w-16 h-6 bg-slate-200 rounded"></div>
+                  </div>
+                  <div className="h-6 bg-slate-200 rounded w-3/4 mb-3"></div>
+                  <div className="h-4 bg-slate-200 rounded w-1/2 mb-5"></div>
+                  <div className="h-4 bg-slate-200 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-slate-200 rounded w-full mb-2"></div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : jobs.length === 0 ? (
           <div className="text-center py-20 text-slate-500 bg-white border border-dashed rounded-3xl p-10">
@@ -451,9 +515,17 @@ export default function Dashboard() {
       ) : (
         // Workspace Tab
         loadingMyJobs ? (
-          <div className="p-20 text-center flex flex-col items-center justify-center gap-3">
-            <Loader2 size={36} className="animate-spin text-blue-600" />
-            <p className="text-slate-500 text-sm font-medium">Syncing secure workspace agreements...</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {[1, 2].map(i => (
+              <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between h-48 animate-pulse">
+                <div className="flex justify-between mb-4">
+                  <div className="w-32 h-6 bg-slate-200 rounded-full"></div>
+                  <div className="w-20 h-6 bg-slate-200 rounded"></div>
+                </div>
+                <div className="h-6 bg-slate-200 rounded w-2/3 mb-4"></div>
+                <div className="w-full h-12 bg-slate-200 rounded-xl mt-auto"></div>
+              </div>
+            ))}
           </div>
         ) : myJobs.length === 0 ? (
           <div className="text-center py-20 text-slate-500 bg-white border border-dashed rounded-3xl p-10">
@@ -627,6 +699,30 @@ export default function Dashboard() {
                           Release Payment & Close
                         </button>
                       )}
+
+                      {/* Raise Dispute */}
+                      {(job.status === 'in-progress' || job.status === 'delivered') && (
+                        <button
+                          onClick={() => handleDisputeClick(job._id)}
+                          disabled={isDisputing === job._id}
+                          className="px-4 py-2 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-200 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                        >
+                          {isDisputing === job._id ? 'Processing...' : 'Raise Dispute'}
+                        </button>
+                      )}
+
+                      {/* Client Leaves Review */}
+                      {user?.role === 'client' && job.status === 'completed' && (
+                        <button
+                          onClick={() => {
+                            setReviewForm({ ...reviewForm, jobId: job._id });
+                            setShowReviewModal(true);
+                          }}
+                          className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5"
+                        >
+                          ⭐ Leave a Review
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -755,6 +851,57 @@ export default function Dashboard() {
                 <button type="button" onClick={() => setShowJobModal(false)} disabled={isPosting} className="px-5 py-2 text-slate-600 font-semibold hover:bg-slate-50 rounded-lg text-sm transition-colors">Cancel</button>
                 <button type="submit" disabled={isPosting} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm shadow-md transition-colors flex items-center gap-2">
                   {isPosting ? <><Loader2 size={14} className="animate-spin" /> Publishing...</> : 'Publish Job'}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>,
+        document.body
+      )}
+
+      {/* Review Modal */}
+      {showReviewModal && createPortal(
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[200] p-4 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100"
+          >
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-yellow-50">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">⭐ Leave a Review</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Rate the freelancer's work quality.</p>
+              </div>
+              <button onClick={() => setShowReviewModal(false)} className="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+            </div>
+            
+            <form onSubmit={handleReviewSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Rating (1-5)</label>
+                <input 
+                  type="number" 
+                  min="1" max="5" required
+                  value={reviewForm.rating}
+                  onChange={e => setReviewForm({...reviewForm, rating: Number(e.target.value)})}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm" 
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Feedback</label>
+                <textarea 
+                  required
+                  value={reviewForm.comment}
+                  onChange={e => setReviewForm({...reviewForm, comment: e.target.value})}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 h-24 resize-none text-sm" 
+                  placeholder="Share your experience working with this freelancer..."
+                ></textarea>
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+                <button type="button" onClick={() => setShowReviewModal(false)} disabled={isSubmittingReview} className="px-5 py-2 text-slate-600 font-semibold hover:bg-slate-50 rounded-lg text-sm transition-colors">Cancel</button>
+                <button type="submit" disabled={isSubmittingReview} className="px-5 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg text-sm shadow-md transition-colors flex items-center gap-2">
+                  {isSubmittingReview ? <><Loader2 size={14} className="animate-spin" /> Submitting...</> : 'Submit Review'}
                 </button>
               </div>
             </form>

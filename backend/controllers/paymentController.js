@@ -153,6 +153,15 @@ const sendReceiptEmail = async (client, payment, job) => {
       `Your payment of INR ${payment.amount} for job "${job.title}" has been securely funded to escrow.`,
       htmlContent
     );
+
+    if (freelancer && freelancer.email) {
+      await sendEmail(
+        freelancer.email,
+        "Escrow Funded - Start Working!",
+        `Great news! The client has securely deposited INR ${payment.freelancerAmount || (payment.amount - payment.platformFee)} into escrow for the job "${job.title}". You can now safely begin your work!`,
+        `<div style="font-family: sans-serif; padding: 20px;"><h2>Escrow Funded</h2><p>Great news! The client has securely deposited your fee into the WorkSphere Escrow for the job <strong>"${job.title}"</strong>.</p><p>You can now safely begin your work knowing your payment is secured.</p></div>`
+      );
+    }
   } catch (error) {
     console.error("Failed to send receipt email:", error);
   }

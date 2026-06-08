@@ -24,8 +24,24 @@ exports.createJob = async (req, res) => {
 
 exports.getJobs = async (req, res) => {
   try {
-    const jobs = await Job.find({ status: 'open', isApproved: true }).populate('client', 'name companyName');
-    res.json(jobs);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const jobs = await Job.find({ status: 'open', isApproved: true })
+      .populate('client', 'name companyName')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Job.countDocuments({ status: 'open', isApproved: true });
+
+    res.json({
+      jobs,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalJobs: total
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -112,7 +128,14 @@ exports.getJobMessages = async (req, res) => {
 exports.getJobBids = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const bids = await Bid.find({ job: jobId }).populate('freelancer', 'name email skills rating');
+    const query = { job: jobId };
+    
+    // If user is a freelancer, only allow them to see their own bid
+    if (req.user.role === 'freelancer') {
+      query.freelancer = req.user.id;
+    }
+    
+    const bids = await Bid.find(query).populate('freelancer', 'name email skills rating');
     res.json(bids);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -273,8 +296,22 @@ exports.getAiMatches = async (req, res) => {
       }))
     };
 
-    const aiResponse = await axios.post('http://127.0.0.1:8000/match', payload);
-    const matches = aiResponse.data;
+    let matches = [];
+    try {
+      const aiResponse = await axios.post('http://127.0.0.1:8000/match', payload, { timeout: 3000 });
+      matches = aiResponse.data;
+    } catch (aiError) {
+      console.warn('AI Matcher unavailable, using fallback keyword matching.');
+      matches = freelancers.map(f => {
+        let score = 0;
+        job.skills.forEach(skill => {
+          if (f.skills && f.skills.some(s => s.toLowerCase() === skill.toLowerCase())) {
+            score += 1;
+          }
+        });
+        return { freelancer_id: f._id.toString(), score: job.skills.length ? score / job.skills.length : 0 };
+      }).filter(m => m.score > 0).sort((a, b) => b.score - a.score);
+    }
 
     const enrichedMatches = matches.map(match => {
       const fData = freelancers.find(f => f._id.toString() === match.freelancer_id);
@@ -319,6 +356,28 @@ exports.updateBid = async (req, res) => {
     await bid.save();
 
     res.json({ message: 'Bid updated successfully', bid });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.disputeJob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const { reason } = req.body;
+    
+    const job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ message: 'Job not found' });
+
+    if (job.client.toString() !== req.user.id && (!job.selectedFreelancer || job.selectedFreelancer.toString() !== req.user.id)) {
+      return res.status(403).json({ message: 'Not authorized to dispute this job' });
+    }
+
+    job.status = 'disputed';
+    // We could store the reason in a new field or just keep it simple
+    await job.save();
+
+    res.json({ message: 'Job marked as disputed. Admin will review.', job });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -17,7 +17,9 @@ import {
   UserCheck,
   UserX,
   FileText,
-  Menu
+  Menu,
+  AlertCircle,
+  MessageSquare
 } from 'lucide-react';
 import Loading from '../components/Loading';
 import toast from 'react-hot-toast';
@@ -44,6 +46,15 @@ export default function AdminPanel() {
   // Interactive Chart Tooltip State
   const [activeTooltip, setActiveTooltip] = useState(null);
 
+  // Dispute Chat Log Modal State
+  const [chatLogModal, setChatLogModal] = useState({ isOpen: false, messages: [], jobId: null, loading: false });
+
+  // Admin Rating Modal State
+  const [ratingModal, setRatingModal] = useState({ isOpen: false, freelancerId: null, rating: 5 });
+
+  // Contact Messages State
+  const [contactMessages, setContactMessages] = useState([]);
+
   const getHeaders = () => {
     const token = sessionStorage.getItem('token');
     return { Authorization: `Bearer ${token}` };
@@ -63,8 +74,32 @@ export default function AdminPanel() {
     }
   };
 
+  const fetchContactMessages = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/admin/contact-messages', {
+        headers: getHeaders()
+      });
+      setContactMessages(res.data);
+    } catch (err) {
+      console.error('Failed to fetch contact messages', err);
+    }
+  };
+
+  const resolveContactMessage = async (id) => {
+    try {
+      await axios.put(`http://localhost:5000/api/admin/contact-messages/${id}/resolve`, {}, {
+        headers: getHeaders()
+      });
+      toast.success('Message marked as resolved');
+      fetchContactMessages();
+    } catch (err) {
+      toast.error('Failed to resolve message');
+    }
+  };
+
   useEffect(() => {
     fetchStats();
+    fetchContactMessages();
   }, []);
 
   const deleteUser = async (id) => {
@@ -105,12 +140,15 @@ export default function AdminPanel() {
     }
   };
 
-  const approveFreelancer = async (id) => {
+  const approveFreelancer = async (id, adminRating) => {
     try {
-      await axios.post(`http://localhost:5000/api/admin/approve-freelancer/${id}`, {}, {
+      await axios.post(`http://localhost:5000/api/admin/approve-freelancer/${id}`, {
+        adminRating
+      }, {
         headers: getHeaders()
       });
-      toast.success("Freelancer verified successfully!");
+      toast.success("Freelancer verified and rated successfully!");
+      setRatingModal({ isOpen: false, freelancerId: null, rating: 5 });
       fetchStats();
     } catch (err) {
       toast.error("Failed to approve freelancer");
@@ -129,8 +167,45 @@ export default function AdminPanel() {
     }
   };
 
+  const fetchChatLog = async (jobId) => {
+    setChatLogModal({ isOpen: true, messages: [], jobId, loading: true });
+    try {
+      const res = await axios.get(`http://localhost:5000/api/admin/resolve-dispute/${jobId}/messages`, {
+        headers: getHeaders()
+      });
+      setChatLogModal({ isOpen: true, messages: res.data, jobId, loading: false });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load chat logs");
+      setChatLogModal(prev => ({ ...prev, loading: false, isOpen: false }));
+    }
+  };
+
+  const resolveDispute = async (jobId, action) => {
+    const isRefund = action === 'refund';
+    const message = isRefund 
+      ? "Are you sure you want to refund the client? This will cancel the project and refund the escrowed funds to the client."
+      : "Are you sure you want to release the funds to the freelancer? This will complete the project and payout the escrowed funds to the freelancer.";
+    
+    if (!window.confirm(message)) return;
+
+    try {
+      const res = await axios.post(`http://localhost:5000/api/admin/resolve-dispute/${jobId}`, {
+        refundClient: isRefund
+      }, {
+        headers: getHeaders()
+      });
+      toast.success(res.data.message || "Dispute resolved successfully!");
+      fetchStats();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to resolve dispute");
+    }
+  };
+
   if (loading) return <Loading />;
   if (error) return <div className="text-center py-20 text-red-500 font-semibold">{error}</div>;
+  if (!stats) return null;
 
   // Filter logic
   const filteredUsers = (stats?.users || []).filter(u => {
@@ -292,6 +367,24 @@ export default function AdminPanel() {
               </span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${activeTab === 'payments' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>
                 {stats?.paymentCount || 0}
+              </span>
+            </button>
+            <button
+              onClick={() => { setActiveTab('disputes'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-sm font-semibold rounded-xl transition-all ${activeTab === 'disputes' ? 'bg-rose-50 text-rose-600 border border-rose-100/50 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 text-slate-500'}`}
+            >
+              <span className="flex items-center gap-3">
+                <AlertCircle size={18} />
+                Disputed Projects
+              </span>
+            </button>
+            <button
+              onClick={() => { setActiveTab('support'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-sm font-semibold rounded-xl transition-all ${activeTab === 'support' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100/50 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 text-slate-500'}`}
+            >
+              <span className="flex items-center gap-3">
+                <MessageSquare size={18} />
+                Support Tickets
               </span>
             </button>
           </nav>
@@ -725,7 +818,10 @@ export default function AdminPanel() {
                                       <span className="bg-purple-100 text-purple-700 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase">ADMIN</span>
                                     )}
                                   </p>
-                                  <p className="text-[10px] text-slate-400 mt-0.5 capitalize">{u.role}</p>
+                                  <p className="text-[10px] text-slate-400 mt-0.5 capitalize">
+                                    {u.role}
+                                    {u.role === 'freelancer' && ` (⭐ Admin: ${u.adminRating || 'Unrated'} | Client: ${u.rating || 'Unrated'})`}
+                                  </p>
                                 </div>
                               </td>
                               <td className="p-4 text-slate-500 font-medium">
@@ -752,7 +848,7 @@ export default function AdminPanel() {
                                   {u.role === 'freelancer' && (
                                     !u.isFreelancerApproved ? (
                                       <button 
-                                        onClick={() => approveFreelancer(u._id)} 
+                                        onClick={() => setRatingModal({ isOpen: true, freelancerId: u._id, rating: 5 })} 
                                         className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1"
                                       >
                                         Approve Account
@@ -1018,9 +1114,292 @@ export default function AdminPanel() {
                 </div>
               </motion.div>
             )}
+            {activeTab === 'disputes' && (
+              <motion.div
+                key="disputes"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-6"
+              >
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-6 border-b border-slate-100 bg-rose-50/30">
+                    <h2 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                      <AlertCircle className="text-rose-500" size={20} />
+                      Active Disputes
+                    </h2>
+                    <p className="text-sm text-slate-500 mt-1">Review and resolve conflicts between clients and freelancers. Make sure to check the chat logs before releasing or refunding payments.</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-slate-500 uppercase bg-slate-50/80 border-b border-slate-200">
+                        <tr>
+                          <th className="p-4">Job Title</th>
+                          <th className="p-4">Client</th>
+                          <th className="p-4">Freelancer</th>
+                          <th className="p-4">Budget</th>
+                          <th className="p-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(stats?.jobs || []).filter(j => j.status === 'disputed').length === 0 ? (
+                          <tr><td colSpan="5" className="p-8 text-center text-slate-400">No active disputes. Excellent!</td></tr>
+                        ) : (
+                          (stats?.jobs || []).filter(j => j.status === 'disputed').map(job => (
+                            <tr key={job._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                              <td className="p-4 font-bold text-slate-800">{job.title}</td>
+                              <td className="p-4 text-slate-600">{job.client?.name}</td>
+                              <td className="p-4 text-slate-600">{job.selectedFreelancer?.name || 'N/A'}</td>
+                              <td className="p-4 font-bold text-slate-900">₹{job.budget}</td>
+                              <td className="p-4">
+                                <div className="flex items-center justify-end gap-2">
+                                  <button onClick={() => fetchChatLog(job._id)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="View Chat Log">
+                                    <MessageSquare size={16} />
+                                  </button>
+                                  <button onClick={() => resolveDispute(job._id, 'release')} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold" title="Pay Freelancer">
+                                    Release
+                                  </button>
+                                  <button onClick={() => resolveDispute(job._id, 'refund')} className="px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg text-xs font-bold" title="Refund Client">
+                                    Refund
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'support' && (
+              <motion.div
+                key="support"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-6"
+              >
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-6 border-b border-slate-100 bg-indigo-50/30">
+                    <h2 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                      <MessageSquare className="text-indigo-500" size={20} />
+                      Support Tickets
+                    </h2>
+                    <p className="text-sm text-slate-500 mt-1">Manage user inquiries and feedback submitted via the Contact Us form.</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-slate-500 uppercase bg-slate-50/80 border-b border-slate-200">
+                        <tr>
+                          <th className="p-4">Date</th>
+                          <th className="p-4">User</th>
+                          <th className="p-4">Subject & Message</th>
+                          <th className="p-4">Status</th>
+                          <th className="p-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {contactMessages.length === 0 ? (
+                          <tr><td colSpan="5" className="p-8 text-center text-slate-400">No support tickets found.</td></tr>
+                        ) : (
+                          contactMessages.map(msg => (
+                            <tr key={msg._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                              <td className="p-4 text-xs text-slate-500 whitespace-nowrap">{new Date(msg.createdAt).toLocaleDateString()}</td>
+                              <td className="p-4">
+                                <p className="font-bold text-slate-800">{msg.name || 'Guest'}</p>
+                                <p className="text-[10px] text-slate-500">{msg.email}</p>
+                              </td>
+                              <td className="p-4 max-w-xs">
+                                <p className="font-bold text-slate-800 text-xs truncate">{msg.subject}</p>
+                                <p className="text-xs text-slate-500 mt-1 line-clamp-2">{msg.message}</p>
+                              </td>
+                              <td className="p-4">
+                                <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                                  msg.status === 'resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                }`}>
+                                  {msg.status}
+                                </span>
+                              </td>
+                              <td className="p-4 text-right">
+                                {msg.status === 'open' && (
+                                  <button 
+                                    onClick={() => resolveContactMessage(msg._id)}
+                                    className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
+                                  >
+                                    Mark Resolved
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Dispute Chat Log Modal */}
+      <AnimatePresence>
+        {chatLogModal.isOpen && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setChatLogModal(prev => ({ ...prev, isOpen: false }))}
+              className="absolute inset-0"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="relative w-full max-w-2xl bg-white border border-slate-200/80 rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh] z-10"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <MessageSquare className="text-blue-500" size={20} />
+                    Dispute Chat Log
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Arbitration console - reviewing secure decrypted communication
+                  </p>
+                </div>
+                <button
+                  onClick={() => setChatLogModal(prev => ({ ...prev, isOpen: false }))}
+                  className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-xl transition-colors"
+                >
+                  <XCircle size={20} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto py-4 space-y-3 min-h-[300px] max-h-[50vh] pr-2 custom-scrollbar">
+                {chatLogModal.loading ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-2">
+                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-xs text-slate-400 font-semibold">Decrypting message logs...</p>
+                  </div>
+                ) : chatLogModal.messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                    <MessageSquare size={40} className="stroke-1 mb-2 opacity-50" />
+                    <p className="text-xs font-semibold">No communication history found for this contract.</p>
+                  </div>
+                ) : (
+                  chatLogModal.messages.map((msg, idx) => {
+                    const isClient = msg.sender?.role === 'client';
+                    return (
+                      <div
+                        key={msg._id || idx}
+                        className={`flex flex-col ${isClient ? 'items-start' : 'items-end'}`}
+                      >
+                        <div
+                          className={`max-w-[85%] rounded-2xl p-3.5 shadow-sm text-xs ${
+                            isClient
+                              ? 'bg-slate-100 text-slate-800 rounded-tl-none border border-slate-200/50'
+                              : 'bg-blue-600 text-white rounded-tr-none'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 mb-1 opacity-75 font-bold text-[9px] uppercase tracking-wider">
+                            <span>{msg.sender?.name || 'Unknown'}</span>
+                            <span>•</span>
+                            <span>{msg.sender?.role || 'User'}</span>
+                          </div>
+                          <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                          <span className="block text-[9px] mt-1.5 text-right opacity-60">
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end">
+                <button
+                  onClick={() => setChatLogModal(prev => ({ ...prev, isOpen: false }))}
+                  className="py-2.5 px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
+                >
+                  Close Console
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Approve & Rate Freelancer Modal */}
+      <AnimatePresence>
+        {ratingModal.isOpen && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setRatingModal(prev => ({ ...prev, isOpen: false }))}
+              className="absolute inset-0"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="relative w-full max-w-md bg-white border border-slate-200/80 rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center z-10"
+            >
+              <div className="w-16 h-16 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                <ShieldCheck size={32} />
+              </div>
+
+              <h3 className="text-lg font-bold text-slate-800 tracking-tight mb-1">
+                Approve & Rate Freelancer
+              </h3>
+              <p className="text-xs text-slate-500 mb-6 max-w-xs">
+                To verify this talent's account, please rate their profile completeness and quality.
+              </p>
+
+              {/* Rating Star Selection */}
+              <div className="flex items-center gap-2 mb-8">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setRatingModal(prev => ({ ...prev, rating: star }))}
+                    className="p-1 text-amber-400 hover:scale-110 active:scale-95 transition-transform"
+                    title={`Rate ${star} Stars`}
+                  >
+                    <span className="text-3xl">
+                      {star <= ratingModal.rating ? '★' : '☆'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setRatingModal(prev => ({ ...prev, isOpen: false }))}
+                  className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => approveFreelancer(ratingModal.freelancerId, ratingModal.rating)}
+                  className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs shadow-lg hover:shadow-emerald-600/20 transition-all active:scale-95"
+                >
+                  Approve Account
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

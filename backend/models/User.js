@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema(
     experience: { type: String },
     location: { type: String },
     rating: { type: Number, default: 0 },
+    adminRating: { type: Number, default: 0 },
     profileCompleteness: { type: Number, default: 0 },
     hourlyRate: { type: Number, default: 0 },
     

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -342,15 +343,20 @@ export default function JobDetails() {
 
       </div>
       {/* Proposal Details Modal */}
-      <AnimatePresence>
-        {selectedBid && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[300] p-4 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col text-slate-600"
+      {createPortal(
+        <AnimatePresence>
+          {selectedBid && (
+            <div 
+              className="fixed inset-0 bg-black/60 flex items-center justify-center z-[500] p-4 backdrop-blur-sm"
+              onClick={() => setSelectedBid(null)}
             >
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col text-slate-600"
+              >
               {/* Header */}
               <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                 <div>
@@ -375,8 +381,14 @@ export default function JobDetails() {
                     <p className="text-[10px] text-slate-400 truncate mt-0.5">{selectedBid.freelancer?.email}</p>
                     <div className="flex items-center gap-1 text-[10px] font-bold text-slate-600 mt-1">
                       <Star size={10} className="text-amber-500 fill-amber-500" />
-                      <span>{selectedBid.freelancer?.rating?.toFixed(1) || '5.0'}</span>
+                      <span>{selectedBid.freelancer?.rating?.toFixed(1) || '0.0'}</span>
                     </div>
+                    {selectedBid.freelancer?.adminRating > 0 && (
+                      <div className="inline-flex items-center gap-1 mt-1.5 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100 font-bold text-[9px] uppercase tracking-wide">
+                        <CheckCircle size={10} className="text-blue-500" />
+                        Admin Verified: {selectedBid.freelancer.adminRating} <Star size={8} className="fill-blue-600 text-blue-600 inline ml-0.5 -mt-0.5" />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -428,10 +440,12 @@ export default function JobDetails() {
                   Accept & Hire
                 </button>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }

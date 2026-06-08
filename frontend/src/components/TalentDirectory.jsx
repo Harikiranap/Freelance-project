@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -243,6 +244,12 @@ CREATE TABLE escrow_payments (
                     <span>{freelancer.rating?.toFixed(1) || '0.0'}</span>
                     <span className="text-slate-400 font-semibold text-[10px]">(0 reviews)</span>
                   </div>
+                  {freelancer.adminRating > 0 && (
+                    <div className="inline-flex items-center gap-1 mt-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100 font-bold text-[9px] uppercase tracking-wide">
+                      <CheckCircle size={10} className="text-blue-500" />
+                      Admin Verified: {freelancer.adminRating} <Star size={8} className="fill-blue-600 text-blue-600 inline ml-0.5 -mt-0.5" />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -289,15 +296,20 @@ CREATE TABLE escrow_payments (
       )}
 
       {/* 1. Profile Details Modal Popup */}
-      <AnimatePresence>
-        {selectedFreelancer && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[300] p-4 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]"
+      {createPortal(
+        <AnimatePresence>
+          {selectedFreelancer && (
+            <div 
+              className="fixed inset-0 bg-black/60 flex items-center justify-center z-[500] p-4 backdrop-blur-sm"
+              onClick={() => setSelectedFreelancer(null)}
             >
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]"
+              >
               {/* Profile Header */}
               <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-start relative">
                 <button 
@@ -402,21 +414,28 @@ CREATE TABLE escrow_payments (
                   <MessageSquare size={14} /> Initiate Discussion
                 </button>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* 2. Interactive simulated Portfolio Browser Modal Popup */}
-      <AnimatePresence>
-        {portfolioTarget && (
-          <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[400] p-4 backdrop-blur-md">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.98, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.98, y: 15 }}
-              className="bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-4xl h-[80vh] overflow-hidden flex flex-col text-slate-300"
+      {createPortal(
+        <AnimatePresence>
+          {portfolioTarget && (
+            <div 
+              className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[500] p-4 backdrop-blur-md"
+              onClick={() => setPortfolioTarget(null)}
             >
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.98, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.98, y: 15 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-4xl h-[80vh] overflow-hidden flex flex-col text-slate-300"
+              >
               {/* Simulated Browser Bar */}
               <div className="bg-slate-900 px-6 py-3 border-b border-slate-800 flex items-center justify-between">
                 {/* Mac Circle Control Panel */}
@@ -572,10 +591,12 @@ CREATE TABLE escrow_payments (
                   </div>
                 )}
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
     </div>
   );

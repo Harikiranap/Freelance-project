@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Avatar from './components/Avatar';
 import AuthModal from './components/AuthModal';
 import Footer from './components/Footer';
+import ContactUs from './components/ContactUs';
 const Home = lazy(() => import('./pages/Home'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Chat = lazy(() => import('./pages/Chat'));
@@ -48,8 +49,9 @@ function AppNav() {
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link to="/">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="text-2xl font-extrabold text-blue-600 tracking-tight cursor-pointer">
-              WorkSphere
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 cursor-pointer">
+              <img src="/icon-transparent.png.png" alt="WorkSphere Logo" className="h-8 w-auto" />
+              <span className="text-2xl font-extrabold text-blue-600 tracking-tight">WorkSphere</span>
             </motion.div>
           </Link>
           <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
@@ -209,41 +211,7 @@ function AppRoutes() {
   );
 }
 
-function CookieBanner() {
-  const [accepted, setAccepted] = useState(true);
 
-  useEffect(() => {
-    const consent = localStorage.getItem('cookieConsent');
-    if (!consent) {
-      setAccepted(false);
-    }
-  }, []);
-
-  const handleAccept = () => {
-    localStorage.setItem('cookieConsent', 'true');
-    setAccepted(true);
-  };
-
-  if (accepted) return null;
-
-  return (
-    <motion.div 
-      initial={{ y: 100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      className="fixed bottom-6 left-6 right-6 md:left-auto md:max-w-md bg-slate-900 text-white p-5 rounded-2xl shadow-2xl border border-slate-800 z-50 flex flex-col gap-3"
-    >
-      <div>
-        <h4 className="font-bold text-sm">🍪 Cookie Consent</h4>
-        <p className="text-xs text-slate-400 mt-1">We use cookies to optimize your platform experience, verify user sessions, and secure escrow payments.</p>
-      </div>
-      <div className="flex gap-2 justify-end">
-        <button onClick={handleAccept} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors">
-          Accept All
-        </button>
-      </div>
-    </motion.div>
-  );
-}
 
 function AppContent() {
   const location = useLocation();
@@ -256,7 +224,7 @@ function AppContent() {
       <SmoothScroll>
         <div className={`pt-16 flex flex-col min-h-screen ${isAdmin ? 'h-[calc(100vh-64px)] overflow-hidden' : ''}`}>
           <AppRoutes />
-          {!isAdmin && <CookieBanner />}
+          {!isAdmin && <ContactUs />}
           {!isAdmin && <Footer />}
         </div>
       </SmoothScroll>
@@ -272,19 +240,40 @@ function App() {
         <Toaster 
           position="top-right"
           toastOptions={{
-            duration: 4000,
+            duration: 5000,
+            style: {
+              background: '#1e293b',
+              color: '#fff',
+              fontSize: '16px',
+              padding: '16px 24px',
+              borderRadius: '16px',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+              maxWidth: '500px',
+            },
+            success: {
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
           }}
         >
           {(t) => (
             <ToastBar toast={t}>
               {({ icon, message }) => (
-                <div className="relative flex items-center w-full pr-4 py-0.5 min-w-[200px]">
-                  {icon}
-                  <div className="flex-1 text-xs font-semibold mr-2 text-slate-800">{message}</div>
+                <div className="relative flex items-center w-full min-w-[280px]">
+                  <div className="mr-3">{icon}</div>
+                  <div className="flex-1 text-sm font-bold mr-4">{message}</div>
                   {t.type !== 'loading' && (
                     <button 
                       onClick={() => toast.dismiss(t.id)} 
-                      className="text-slate-400 hover:text-slate-600 text-xs font-extrabold focus:outline-none p-1 hover:bg-slate-100 rounded transition-colors ml-auto cursor-pointer"
+                      className="text-slate-400 hover:text-white font-extrabold focus:outline-none p-1.5 hover:bg-slate-700 rounded-lg transition-colors ml-auto cursor-pointer"
                       style={{ background: 'none', border: 'none' }}
                       title="Close"
                     >
@@ -292,10 +281,10 @@ function App() {
                     </button>
                   )}
                   {t.type !== 'loading' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-[3px] overflow-hidden rounded-b">
+                    <div className="absolute bottom-[-16px] left-[-24px] right-[-24px] h-[4px] overflow-hidden rounded-b-xl opacity-50">
                       <div 
                         className={`h-full ${t.type === 'error' ? 'bg-red-500' : 'bg-emerald-500'} toast-progress-bar`}
-                        style={{ animationDuration: `${t.duration || 4000}ms` }}
+                        style={{ animationDuration: `${t.duration || 5000}ms` }}
                       />
                     </div>
                   )}
