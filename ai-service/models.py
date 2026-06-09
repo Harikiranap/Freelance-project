@@ -1,12 +1,16 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 class Freelancer(BaseModel):
     id: str
+    name: str = ""
     skills: List[str]
+    rating: float = 5.0
 
 class Job(BaseModel):
     id: str
+    title: str = ""
+    description: str = ""
     skills_required: List[str]
 
 class MatchRequest(BaseModel):

@@ -7,6 +7,15 @@ const bidSchema = new mongoose.Schema(
     amount: { type: Number, required: true }, // in INR
     proposal: { type: String, required: true },
     status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
+    negotiationHistory: [
+      {
+        offeredBy: { type: String, enum: ['client', 'freelancer'], required: true },
+        amount: { type: Number, required: true },
+        message: String,
+        status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
+        createdAt: { type: Date, default: Date.now }
+      }
+    ]
   },
   { timestamps: true }
 );

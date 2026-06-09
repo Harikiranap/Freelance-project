@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { signInWithGoogle } from '../firebase';
 import { useAuth } from '../context/AuthContext';
@@ -11,10 +11,27 @@ export default function AuthModal() {
   
   const [isLogin, setIsLogin] = useState(true);
   
+  // Forgot Password state
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [forgotPasswordStep, setForgotPasswordStep] = useState('email'); // 'email' or 'reset'
+  const [resetEmail, setResetEmail] = useState('');
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
+  const otpRefs = useRef([]);
+
   useEffect(() => {
     if (authModal) {
       document.body.style.overflow = 'hidden';
       setIsLogin(authModal === 'login');
+      setIsForgotPassword(false);
+      setForgotPasswordStep('email');
+      setResetEmail('');
+      setOtpDigits(['', '', '', '', '', '']);
+      setNewPassword('');
+      setConfirmNewPassword('');
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -38,6 +55,92 @@ export default function AuthModal() {
   const [googleData, setGoogleData] = useState(null);
   const [selectedRole, setSelectedRole] = useState('client');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleOtpChange = (index, value) => {
+    // Only allow digits
+    if (!/^\d*$/.test(value)) return;
+    
+    const newDigits = [...otpDigits];
+    // Take only the last character entered
+    newDigits[index] = value.slice(-1);
+    setOtpDigits(newDigits);
+    
+    // Auto focus next box if we entered a digit
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace') {
+      if (!otpDigits[index] && index > 0) {
+        // If current box is empty, delete previous digit and focus it
+        const newDigits = [...otpDigits];
+        newDigits[index - 1] = '';
+        setOtpDigits(newDigits);
+        otpRefs.current[index - 1]?.focus();
+      } else if (otpDigits[index]) {
+        // If current box has a value, clear it
+        const newDigits = [...otpDigits];
+        newDigits[index] = '';
+        setOtpDigits(newDigits);
+      }
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData('text').trim();
+    if (!/^\d{6}$/.test(pasteData)) return; // Only paste 6 digit numeric code
+    
+    const newDigits = pasteData.split('');
+    setOtpDigits(newDigits);
+    otpRefs.current[5]?.focus();
+  };
+
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      if (forgotPasswordStep === 'email') {
+        const res = await axios.post('http://localhost:5000/api/auth/forgot-password', { email: resetEmail });
+        toast.success(res.data.message || 'OTP sent successfully!');
+        setForgotPasswordStep('reset');
+      } else {
+        const fullOtp = otpDigits.join('');
+        if (fullOtp.length !== 6) {
+          toast.error('Please enter the full 6-digit OTP code');
+          setIsSubmitting(false);
+          return;
+        }
+        if (newPassword !== confirmNewPassword) {
+          toast.error('Passwords do not match');
+          setIsSubmitting(false);
+          return;
+        }
+        if (newPassword.length < 6) {
+          toast.error('Password must be at least 6 characters long');
+          setIsSubmitting(false);
+          return;
+        }
+        const res = await axios.post('http://localhost:5000/api/auth/reset-password', {
+          email: resetEmail,
+          otp: fullOtp,
+          newPassword
+        });
+        toast.success(res.data.message || 'Password reset successfully!');
+        setIsLogin(true);
+        setIsForgotPassword(false);
+        setForgotPasswordStep('email');
+        setEmail(resetEmail);
+        setPassword('');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Something went wrong');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -168,6 +271,148 @@ export default function AuthModal() {
               >
                 {isSubmitting ? <><Loader2 size={18} className="animate-spin" /> Processing...</> : 'Continue to Dashboard'}
               </button>
+            </motion.div>
+          ) : isForgotPassword ? (
+            <motion.div 
+              key="forgot-password"
+              initial={{ opacity: 0, rotateY: 90, scale: 0.9 }}
+              animate={{ opacity: 1, rotateY: 0, scale: 1 }}
+              exit={{ opacity: 0, rotateY: -90, scale: 0.9 }}
+              transition={{ duration: 0.6, type: "spring", bounce: 0.3 }}
+              className="relative backdrop-blur-xl bg-white/80 border border-white shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] p-6 md:p-8 rounded-3xl max-h-[90vh] overflow-y-auto custom-scrollbar"
+            >
+              <button onClick={closeAuth} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors bg-slate-100 hover:bg-slate-200 p-2 rounded-full z-10 shadow-sm">
+                <X size={18} />
+              </button>
+
+              <h2 className="text-2xl font-extrabold text-slate-900 mb-4 text-center tracking-tight mt-6 md:mt-4">
+                {forgotPasswordStep === 'email' ? 'Forgot Password' : 'Reset Password'}
+              </h2>
+
+              <p className="text-sm text-slate-500 text-center mb-6">
+                {forgotPasswordStep === 'email' 
+                  ? 'Enter your registered email and we will send you an OTP to reset your password.'
+                  : `Enter the OTP sent to ${resetEmail} and your new password.`}
+              </p>
+
+              <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+                {forgotPasswordStep === 'email' ? (
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Email Address</label>
+                    <input 
+                      type="email" 
+                      className="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-sm text-slate-900 placeholder-slate-400"
+                      placeholder="you@example.com"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">Verification Code (6-Digit OTP)</label>
+                      <div className="flex gap-2 justify-center mb-1" onPaste={handleOtpPaste}>
+                        {otpDigits.map((digit, index) => (
+                          <input
+                            key={index}
+                            ref={(el) => (otpRefs.current[index] = el)}
+                            type="text"
+                            name={`reset-otp-${index}`}
+                            autoComplete="off"
+                            inputMode="numeric"
+                            maxLength="1"
+                            value={digit}
+                            onChange={(e) => handleOtpChange(index, e.target.value)}
+                            onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                            className="w-12 h-12 text-center text-xl font-bold rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-slate-900 placeholder-slate-400 shrink-0"
+                            required
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">New Password</label>
+                      <div className="relative">
+                        <input 
+                          type={showNewPassword ? "text" : "password"} 
+                          className="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-sm text-slate-900 placeholder-slate-400 pr-10"
+                          placeholder="••••••••"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          required
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+                        >
+                          {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Confirm New Password</label>
+                      <input 
+                        type={showNewPassword ? "text" : "password"} 
+                        className="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-sm text-slate-900 placeholder-slate-400"
+                        placeholder="••••••••"
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 mt-4 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all transform hover:-translate-y-1 disabled:opacity-70 disabled:transform-none"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    forgotPasswordStep === 'email' ? 'Send Reset OTP' : 'Reset Password'
+                  )}
+                </button>
+              </form>
+
+              <div className="flex items-center justify-between mt-6 text-sm">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setIsForgotPassword(false);
+                    setIsLogin(true);
+                  }}
+                  className="font-bold text-blue-600 hover:underline transition-colors focus:outline-none bg-transparent border-none"
+                >
+                  Back to Log In
+                </button>
+                {forgotPasswordStep === 'reset' && (
+                  <button 
+                    type="button"
+                    onClick={async () => {
+                      setIsSubmitting(true);
+                      try {
+                        const res = await axios.post('http://localhost:5000/api/auth/forgot-password', { email: resetEmail });
+                        toast.success(res.data.message || 'OTP resent successfully!');
+                      } catch (err) {
+                        toast.error(err.response?.data?.message || 'Failed to resend OTP');
+                      } finally {
+                        setIsSubmitting(false);
+                      }
+                    }}
+                    disabled={isSubmitting}
+                    className="font-bold text-blue-600 hover:underline transition-colors disabled:opacity-50 focus:outline-none bg-transparent border-none"
+                  >
+                    Resend Code
+                  </button>
+                )}
+              </div>
             </motion.div>
           ) : (
             <motion.div 
@@ -300,7 +545,17 @@ export default function AuthModal() {
 
                 {isLogin && (
                   <div className="flex items-center justify-end mt-4 mb-4">
-                    <a href="#" className="text-sm font-bold text-blue-600 hover:underline transition-colors">Forgot password?</a>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setIsForgotPassword(true);
+                        setForgotPasswordStep('email');
+                        setResetEmail(email.includes('@') ? email : '');
+                      }} 
+                      className="text-sm font-bold text-blue-600 hover:underline transition-colors focus:outline-none bg-transparent border-none"
+                    >
+                      Forgot password?
+                    </button>
                   </div>
                 )}
                 

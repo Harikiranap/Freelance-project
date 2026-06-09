@@ -100,6 +100,12 @@ exports.getJobMessages = async (req, res) => {
       }
     }
 
+    // Mark messages received by the current user as read in the DB
+    await Message.updateMany(
+      { ...query, receiver: req.user.id, isRead: false },
+      { $set: { isRead: true } }
+    );
+
     const messages = await Message.find(query).sort({ createdAt: 1 });
     
     // Decrypt messages for authorized client reading
@@ -111,6 +117,7 @@ exports.getJobMessages = async (req, res) => {
           receiver: msg.receiver,
           job: msg.job,
           content: decrypt(msg.content),
+          isRead: msg.isRead,
           createdAt: msg.createdAt,
           updatedAt: msg.updatedAt
         };
@@ -163,7 +170,15 @@ exports.placeBid = async (req, res) => {
       job: jobId,
       freelancer: req.user.id,
       amount,
-      proposal
+      proposal,
+      negotiationHistory: [
+        {
+          offeredBy: 'freelancer',
+          amount: amount,
+          message: proposal,
+          status: 'pending'
+        }
+      ]
     });
 
     res.status(201).json(bid);
@@ -188,6 +203,12 @@ exports.acceptBid = async (req, res) => {
 
     // Update Bid status
     bid.status = 'accepted';
+    if (bid.negotiationHistory && bid.negotiationHistory.length > 0) {
+      const lastHist = bid.negotiationHistory[bid.negotiationHistory.length - 1];
+      if (lastHist.status === 'pending') {
+        lastHist.status = 'accepted';
+      }
+    }
     await bid.save();
 
     // Reject all other bids for this job
@@ -288,11 +309,15 @@ exports.getAiMatches = async (req, res) => {
     const payload = {
       job: {
         id: job._id.toString(),
-        skills_required: job.skills
+        title: job.title || '',
+        description: job.description || '',
+        skills_required: job.skills || []
       },
       freelancers: freelancers.map(f => ({
         id: f._id.toString(),
-        skills: f.skills
+        name: f.name || '',
+        skills: f.skills || [],
+        rating: f.rating || 5
       }))
     };
 
@@ -378,6 +403,121 @@ exports.disputeJob = async (req, res) => {
     await job.save();
 
     res.json({ message: 'Job marked as disputed. Admin will review.', job });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.postCounterOffer = async (req, res) => {
+  try {
+    const { bidId } = req.params;
+    const { amount, message } = req.body;
+
+    const bid = await Bid.findById(bidId).populate('job');
+    if (!bid) return res.status(404).json({ message: 'Bid not found' });
+
+    const isFreelancer = bid.freelancer.toString() === req.user.id;
+    const isClient = bid.job.client.toString() === req.user.id;
+
+    if (!isFreelancer && !isClient) {
+      return res.status(403).json({ message: 'Not authorized to negotiate this bid' });
+    }
+
+    if (bid.status !== 'pending' || bid.job.status !== 'open') {
+      return res.status(400).json({ message: 'Bidding is closed for this project' });
+    }
+
+    const offeredBy = isClient ? 'client' : 'freelancer';
+
+    // Append to negotiation history
+    bid.negotiationHistory.push({
+      offeredBy,
+      amount,
+      message: message || `Counter-offer proposed by ${offeredBy}`,
+      status: 'pending'
+    });
+
+    // Mark previous pending steps as rejected
+    for (let i = 0; i < bid.negotiationHistory.length - 1; i++) {
+      if (bid.negotiationHistory[i].status === 'pending') {
+        bid.negotiationHistory[i].status = 'rejected';
+      }
+    }
+
+    bid.amount = amount;
+    await bid.save();
+
+    res.json({ message: 'Counter-offer submitted successfully', bid });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.acceptCounterOffer = async (req, res) => {
+  try {
+    const { bidId } = req.params;
+    const bid = await Bid.findById(bidId).populate('job');
+    if (!bid) return res.status(404).json({ message: 'Bid not found' });
+
+    if (bid.negotiationHistory.length === 0) {
+      return res.status(400).json({ message: 'No counter-offers found to accept' });
+    }
+
+    const lastOffer = bid.negotiationHistory[bid.negotiationHistory.length - 1];
+    if (lastOffer.status !== 'pending') {
+      return res.status(400).json({ message: 'No pending counter-offer is active' });
+    }
+
+    const offeredBy = lastOffer.offeredBy;
+    const isClient = req.user.role === 'client' && bid.job.client.toString() === req.user.id;
+    const isFreelancer = req.user.role === 'freelancer' && bid.freelancer.toString() === req.user.id;
+
+    if ((offeredBy === 'client' && !isFreelancer) || (offeredBy === 'freelancer' && !isClient)) {
+      return res.status(403).json({ message: 'You cannot accept your own counter-offer' });
+    }
+
+    // Update active offer status to accepted
+    lastOffer.status = 'accepted';
+    bid.status = 'accepted';
+    await bid.save();
+
+    const job = await Job.findById(bid.job._id);
+    job.status = 'in-progress';
+    job.selectedFreelancer = bid.freelancer;
+    job.acceptedPrice = bid.amount;
+    await job.save();
+
+    // Reject other bids
+    await Bid.updateMany(
+      { job: bid.job._id, _id: { $ne: bidId } },
+      { $set: { status: 'rejected' } }
+    );
+
+    res.json({ message: 'Negotiation accepted and contract established!', bid });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.rejectCounterOffer = async (req, res) => {
+  try {
+    const { bidId } = req.params;
+    const bid = await Bid.findById(bidId).populate('job');
+    if (!bid) return res.status(404).json({ message: 'Bid not found' });
+
+    if (bid.negotiationHistory.length === 0) {
+      return res.status(400).json({ message: 'No counter-offers found to decline' });
+    }
+
+    const lastOffer = bid.negotiationHistory[bid.negotiationHistory.length - 1];
+    if (lastOffer.status !== 'pending') {
+      return res.status(400).json({ message: 'No pending counter-offer is active' });
+    }
+
+    lastOffer.status = 'rejected';
+    await bid.save();
+
+    res.json({ message: 'Counter-offer declined successfully', bid });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

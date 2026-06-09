@@ -51,6 +51,7 @@ const io = new Server(server, {
 
 const Message = require('./models/Message');
 const User = require('./models/User');
+const Violation = require('./models/Violation');
 const { encrypt } = require('./utils/crypto');
 const { sendEmail } = require('./utils/email');
 
@@ -59,50 +60,131 @@ const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
 const phoneRegex = /\b\d{10}\b/; // Simplistic Indian phone number check
 const upiRegex = /[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}/;
 
+function maskSensitiveData(text) {
+  let masked = text;
+  const types = [];
+
+  // Match and mask emails
+  if (emailRegex.test(masked)) {
+    types.push('email');
+    masked = masked.replace(new RegExp(emailRegex, 'g'), '[SENSITIVE INFO: EMAIL MASKED]');
+  }
+
+  // Match and mask UPIs
+  if (upiRegex.test(masked)) {
+    types.push('upi');
+    masked = masked.replace(new RegExp(upiRegex, 'g'), '[SENSITIVE INFO: UPI MASKED]');
+  }
+
+  // Match and mask phone numbers
+  if (phoneRegex.test(masked)) {
+    types.push('phone');
+    masked = masked.replace(new RegExp(phoneRegex, 'g'), '[SENSITIVE INFO: PHONE MASKED]');
+  }
+
+  return { masked, types: [...new Set(types)] };
+}
+
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
   
-  // Join a room based on Job ID (so client and freelancer chat in a specific job context)
-  socket.on('join_room', (roomName) => {
+  // Join a room based on Job ID
+  socket.on('join_room', async (data) => {
+    const roomName = typeof data === 'string' ? data : data.roomName;
     socket.join(roomName);
     console.log(`User joined room: ${roomName}`);
+
+    // Mark messages received by the user joining as read in DB and inform others
+    if (typeof data === 'object' && data.userId && data.jobId) {
+      try {
+        await Message.updateMany(
+          { job: data.jobId, receiver: data.userId, isRead: false },
+          { $set: { isRead: true } }
+        );
+        socket.to(roomName).emit('messages_marked_read', { userId: data.userId });
+      } catch (err) {
+        console.error('Error marking messages read on join:', err);
+      }
+    }
+  });
+
+  socket.on('typing', (data) => {
+    // data expected: { roomName, username }
+    socket.to(data.roomName).emit('user_typing', { username: data.username });
+  });
+
+  socket.on('stop_typing', (data) => {
+    // data expected: { roomName, username }
+    socket.to(data.roomName).emit('user_stopped_typing', { username: data.username });
+  });
+
+  socket.on('mark_read', async (data) => {
+    // data expected: { roomName, userId, jobId }
+    const { roomName, userId, jobId } = data;
+    try {
+      await Message.updateMany(
+        { job: jobId, receiver: userId, isRead: false },
+        { $set: { isRead: true } }
+      );
+      socket.to(roomName).emit('messages_marked_read', { userId });
+    } catch (err) {
+      console.error('Error marking messages read via sockets:', err);
+    }
   });
 
   socket.on('send_message', async (data) => {
     // data expected: { senderId, receiverId, jobId, content, roomName }
     const { senderId, receiverId, jobId, content, roomName } = data;
 
-    // Filter personal info
-    if (emailRegex.test(content) || phoneRegex.test(content) || upiRegex.test(content)) {
-      // Emit warning back to sender
-      socket.emit('warning', { message: 'Do not share personal contact details. Continue at your own risk.' });
-      // Depending on policy, we might still send the message or block it. The prompt said "Block or warn user". Let's just warn and send for now.
+    let displayContent = content;
+    const { masked, types } = maskSensitiveData(content);
+
+    if (types.length > 0) {
+      displayContent = masked;
+      socket.emit('warning', { 
+        message: 'Warning: Sharing contact/payment details is forbidden. Your message has been masked, and this violation has been logged.' 
+      });
+
+      try {
+        await Violation.create({
+          sender: senderId,
+          receiver: receiverId,
+          job: jobId,
+          originalMessage: encrypt(content),
+          violationType: types.join(', ')
+        });
+      } catch (err) {
+        console.error('Error logging safety violation:', err);
+      }
     }
 
-    // Encrypt before saving
-    const encryptedContent = encrypt(content);
+    // Check if receiver is in the room
+    const roomClients = io.sockets.adapter.rooms.get(roomName || jobId);
+    const isReadImmediately = roomClients && roomClients.size >= 2;
+
+    const encryptedContent = encrypt(displayContent);
 
     try {
       const message = await Message.create({
         sender: senderId,
         receiver: receiverId,
         job: jobId,
-        content: encryptedContent
+        content: encryptedContent,
+        isRead: isReadImmediately
       });
 
-      // Broadcast to room (sending decrypted/plain text to clients, keeping DB encrypted at rest)
+      // Broadcast to room
       io.to(roomName || jobId).emit('receive_message', {
         _id: message._id,
         sender: senderId,
         receiver: receiverId,
         job: jobId,
-        content: content, // Decrypted/plain text for frontend display
+        content: displayContent,
+        isRead: isReadImmediately,
         createdAt: message.createdAt
       });
 
-      // Check if receiver is in the room
-      const roomClients = io.sockets.adapter.rooms.get(roomName || jobId);
-      if (!roomClients || roomClients.size < 2) {
+      if (!isReadImmediately) {
         // Receiver is likely offline, send email notification
         const receiver = await User.findById(receiverId);
         if (receiver && receiver.email) {

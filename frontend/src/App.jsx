@@ -242,12 +242,13 @@ function App() {
           toastOptions={{
             duration: 5000,
             style: {
-              background: '#1e293b',
-              color: '#fff',
+              background: '#ffffff',
+              color: '#0f172a',
+              border: '1px solid #e2e8f0',
               fontSize: '16px',
               padding: '16px 24px',
               borderRadius: '16px',
-              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03)',
               maxWidth: '500px',
             },
             success: {
@@ -269,11 +270,11 @@ function App() {
               {({ icon, message }) => (
                 <div className="relative flex items-center w-full min-w-[280px]">
                   <div className="mr-3">{icon}</div>
-                  <div className="flex-1 text-sm font-bold mr-4">{message}</div>
+                  <div className="flex-1 text-sm font-bold mr-4 text-slate-800">{message}</div>
                   {t.type !== 'loading' && (
                     <button 
                       onClick={() => toast.dismiss(t.id)} 
-                      className="text-slate-400 hover:text-white font-extrabold focus:outline-none p-1.5 hover:bg-slate-700 rounded-lg transition-colors ml-auto cursor-pointer"
+                      className="text-slate-400 hover:text-slate-700 font-extrabold focus:outline-none p-1.5 hover:bg-slate-100 rounded-lg transition-colors ml-auto cursor-pointer"
                       style={{ background: 'none', border: 'none' }}
                       title="Close"
                     >

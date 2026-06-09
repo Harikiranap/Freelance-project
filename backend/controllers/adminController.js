@@ -3,6 +3,7 @@ const Job = require('../models/Job');
 const Payment = require('../models/Payment');
 const Message = require('../models/Message');
 const ContactMessage = require('../models/ContactMessage');
+const Violation = require('../models/Violation');
 const { decrypt } = require('../utils/crypto');
 
 exports.getStats = async (req, res) => {
@@ -171,6 +172,33 @@ exports.resolveContactMessage = async (req, res) => {
     message.status = 'resolved';
     await message.save();
     res.json({ message: 'Contact message resolved', data: message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getViolations = async (req, res) => {
+  try {
+    const violations = await Violation.find()
+      .populate('sender', 'name email role')
+      .populate('receiver', 'name email role')
+      .populate('job', 'title')
+      .sort({ createdAt: -1 });
+
+    const decryptedViolations = violations.map(v => {
+      let originalContent = 'Could not decrypt';
+      try {
+        originalContent = decrypt(v.originalMessage);
+      } catch (err) {
+        console.warn('Failed to decrypt violation message:', err.message);
+      }
+      return {
+        ...v.toObject(),
+        originalMessage: originalContent
+      };
+    });
+
+    res.json(decryptedViolations);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

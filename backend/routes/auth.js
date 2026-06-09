@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, login, verifyOtp, googleLogin, completeProfile, googleComplete, updateProfile, getMe } = require('../controllers/authController');
+const { register, login, verifyOtp, googleLogin, completeProfile, googleComplete, updateProfile, getMe, forgotPassword, resetPassword } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimiter');
 const { validate, registerSchema } = require('../utils/validators');
@@ -14,5 +14,7 @@ router.post('/google', googleLogin);
 router.post('/google/complete', googleComplete);
 router.put('/complete-profile', protect, completeProfile);
 router.put('/profile', protect, updateProfile);
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/reset-password', authLimiter, resetPassword);
 
 module.exports = router;

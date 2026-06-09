@@ -1,5 +1,5 @@
 const express = require('express');
-const { getStats, deleteUser, deleteJob, approveFreelancer, revokeFreelancer, resolveDispute, getDisputeMessages, getContactMessages, resolveContactMessage } = require('../controllers/adminController');
+const { getStats, deleteUser, deleteJob, approveFreelancer, revokeFreelancer, resolveDispute, getDisputeMessages, getContactMessages, resolveContactMessage, getViolations } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/auth');
 const router = express.Router();
 
@@ -15,5 +15,6 @@ router.post('/resolve-dispute/:id', resolveDispute);
 router.get('/resolve-dispute/:id/messages', getDisputeMessages);
 router.get('/contact-messages', getContactMessages);
 router.put('/contact-messages/:id/resolve', resolveContactMessage);
+router.get('/violations', getViolations);
 
 module.exports = router;
