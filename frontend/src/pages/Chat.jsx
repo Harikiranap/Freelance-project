@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { io } from 'socket.io-client';
 import axios from 'axios';
@@ -106,7 +107,8 @@ export default function Chat() {
             subtitle: `Freelancer: ${fl?.name || 'Assigned'}`,
             budget: j.acceptedPrice || j.budget,
             status: j.status,
-            roomName: fl ? `${j._id}_${fl._id || fl}` : j._id
+            roomName: fl ? `${j._id}_${fl._id || fl}` : j._id,
+            negotiationHistory: []
           });
         }
       }
@@ -120,7 +122,11 @@ export default function Chat() {
         // If we already had a selected conversation, try to find it in the new list to update history
         const currentSelectedId = selectedJob?._id;
         if (currentSelectedId) {
-          const match = conversations.find(c => c._id === currentSelectedId);
+          const match = conversations.find(c => 
+            c._id === currentSelectedId || 
+            (typeof currentSelectedId === 'string' && currentSelectedId.startsWith(c._id + '_')) ||
+            (typeof c._id === 'string' && c._id.startsWith(currentSelectedId + '_'))
+          );
           if (match) selected = match;
         } else {
           const passedJobId = location.state?.jobId;
@@ -163,10 +169,15 @@ export default function Chat() {
     const fetchMessages = async () => {
       try {
         const token = user?.token || sessionStorage.getItem('token');
-        const freelancerParam = selectedJob.freelancer 
-          ? `?freelancerId=${selectedJob.freelancer._id || selectedJob.freelancer}` 
-          : '';
-        const res = await axios.get(`http://localhost:5000/api/jobs/${selectedJob.job._id}/messages${freelancerParam}`, {
+        let url = `http://localhost:5000/api/jobs/${selectedJob.job._id}/messages`;
+        if (user.role === 'client' && selectedJob.freelancer) {
+          const fId = selectedJob.freelancer._id || selectedJob.freelancer;
+          url += `?freelancerId=${fId}`;
+        } else if (user.role === 'freelancer') {
+          url += `?freelancerId=${user.id || user._id}`;
+        }
+        
+        const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setMessages(res.data);
@@ -293,7 +304,7 @@ export default function Chat() {
       };
       socket.emit('send_message', msgData);
 
-      fetchMyJobs();
+      setTimeout(() => fetchMyJobs(), 500);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to accept offer');
     }
@@ -320,7 +331,7 @@ export default function Chat() {
       };
       socket.emit('send_message', msgData);
 
-      fetchMyJobs();
+      setTimeout(() => fetchMyJobs(), 500);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to decline offer');
     }
@@ -379,69 +390,72 @@ export default function Chat() {
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 h-[80vh] flex overflow-hidden">
       
       {/* Propose Counter Offer Modal */}
-      <AnimatePresence>
-        {showCounterModal && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowCounterModal(false)}
-              className="absolute inset-0"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white border border-slate-200/80 rounded-3xl p-6 shadow-2xl flex flex-col z-10 text-center"
-            >
-              <h3 className="text-lg font-bold text-slate-800 tracking-tight mb-2">
-                Propose Counter-Offer
-              </h3>
-              <p className="text-xs text-slate-500 mb-6">
-                Submit a counter-proposal to negotiate the project budget. The other party must accept to establish the active contract.
-              </p>
+      {createPortal(
+        <AnimatePresence>
+          {showCounterModal && (
+            <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowCounterModal(false)}
+                className="absolute inset-0"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative w-full max-w-md bg-white border border-slate-200/80 rounded-3xl p-6 shadow-2xl flex flex-col z-10 text-center"
+              >
+                <h3 className="text-lg font-bold text-slate-800 tracking-tight mb-2">
+                  Propose Counter-Offer
+                </h3>
+                <p className="text-xs text-slate-500 mb-6">
+                  Submit a counter-proposal to negotiate the project budget. The other party must accept to establish the active contract.
+                </p>
 
-              <div className="space-y-4 text-left mb-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">Proposed Price (₹)</label>
-                  <input
-                    type="number"
-                    value={counterAmount}
-                    onChange={(e) => setCounterAmount(e.target.value)}
-                    placeholder="e.g. 15000"
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-semibold"
-                  />
+                <div className="space-y-4 text-left mb-6">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">Proposed Price (₹)</label>
+                    <input
+                      type="number"
+                      value={counterAmount}
+                      onChange={(e) => setCounterAmount(e.target.value)}
+                      placeholder="e.g. 15000"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">Negotiation Message (Optional)</label>
+                    <textarea
+                      value={counterMessage}
+                      onChange={(e) => setCounterMessage(e.target.value)}
+                      placeholder="Provide context or terms for this counter-offer..."
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm h-20 resize-none"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">Negotiation Message (Optional)</label>
-                  <textarea
-                    value={counterMessage}
-                    onChange={(e) => setCounterMessage(e.target.value)}
-                    placeholder="Provide context or terms for this counter-offer..."
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm h-20 resize-none"
-                  />
-                </div>
-              </div>
 
-              <div className="flex gap-3 w-full">
-                <button
-                  onClick={() => setShowCounterModal(false)}
-                  className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCounterSubmit}
-                  className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs shadow-md transition-colors"
-                >
-                  Propose Rate
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => setShowCounterModal(false)}
+                    className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCounterSubmit}
+                    className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs shadow-md transition-colors"
+                  >
+                    Propose Rate
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Sidebar: Job List */}
       <div className="w-1/3 border-r border-slate-100 bg-slate-50 flex flex-col">
@@ -539,7 +553,9 @@ export default function Chat() {
 
               {/* Action Banner for pending counter-offers */}
               {(() => {
-                const lastOffer = selectedJob.negotiationHistory[selectedJob.negotiationHistory.length - 1];
+                const history = selectedJob.negotiationHistory || [];
+                if (history.length === 0) return null;
+                const lastOffer = history[history.length - 1];
                 if (lastOffer && lastOffer.status === 'pending') {
                   const proposedByMe = (lastOffer.offeredBy === 'client' && user.role === 'client') || 
                                        (lastOffer.offeredBy === 'freelancer' && user.role === 'freelancer');
@@ -682,18 +698,18 @@ export default function Chat() {
               }}
               placeholder="Type a message..."
               className="flex-1 px-5 py-3 bg-slate-50 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm"
-              disabled={selectedJob.status === 'open' && !selectedJob.freelancer && !selectedJob.job.selectedFreelancer}
+              disabled={user.role === 'client' && selectedJob.status === 'open' && !selectedJob.freelancer}
             />
             <button 
               type="submit" 
-              disabled={selectedJob.status === 'open' && !selectedJob.freelancer && !selectedJob.job.selectedFreelancer}
+              disabled={user.role === 'client' && selectedJob.status === 'open' && !selectedJob.freelancer}
               className="bg-blue-600 text-white px-8 py-3 rounded-full font-medium hover:bg-blue-700 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Send
             </button>
           </form>
           
-          {selectedJob.status === 'open' && !selectedJob.freelancer && !selectedJob.job.selectedFreelancer && (
+          {user.role === 'client' && selectedJob.status === 'open' && !selectedJob.freelancer && (
             <div className="absolute bottom-[72px] left-0 w-full bg-slate-50 text-slate-600 text-xs p-2 text-center border-t border-slate-100">
               No freelancer has bid on this job yet. Conversations will start once bids are received.
             </div>
