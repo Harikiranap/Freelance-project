@@ -22,6 +22,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import Loading from '../components/Loading';
+import AdminLiveChats from '../components/AdminLiveChats';
 import toast from 'react-hot-toast';
 
 export default function AdminPanel() {
@@ -494,6 +495,15 @@ export default function AdminPanel() {
               <span className="flex items-center gap-3">
                 <MessageSquare size={18} />
                 Support Tickets
+              </span>
+            </button>
+            <button
+              onClick={() => { setActiveTab('live-chats'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-sm font-semibold rounded-xl transition-all ${activeTab === 'live-chats' ? 'bg-cyan-50 text-cyan-600 border border-cyan-100/50 shadow-sm' : 'hover:bg-slate-50 hover:text-slate-900 text-slate-500'}`}
+            >
+              <span className="flex items-center gap-3">
+                <MessageSquare size={18} />
+                Live Chats
               </span>
             </button>
             <button
@@ -1510,6 +1520,27 @@ export default function AdminPanel() {
                     </table>
                   </div>
                 </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'live-chats' && (
+              <motion.div
+                key="live-chats"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-6"
+              >
+                <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-150 shadow-sm">
+                  <div>
+                    <h2 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                      <MessageSquare className="text-cyan-500" /> Live Chat Support
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">Chat with users in real-time.</p>
+                  </div>
+                </div>
+
+                <AdminLiveChats />
               </motion.div>
             )}
 

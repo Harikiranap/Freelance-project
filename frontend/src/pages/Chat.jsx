@@ -113,6 +113,19 @@ export default function Chat() {
         }
       }
 
+      // Add the WorkOwn Admin Support Chat
+      conversations.unshift({
+        _id: 'support',
+        isSupport: true,
+        title: 'WorkOwn Admin Support',
+        subtitle: 'Chat with platform administrators',
+        roomName: `support_${user.id || user._id}`,
+        job: null,
+        status: 'open',
+        budget: 0,
+        negotiationHistory: []
+      });
+
       setJobs(conversations);
       
       // Keep selected job updated or select first
@@ -165,19 +178,24 @@ export default function Chat() {
     socket.emit('join_room', {
       roomName: selectedJob.roomName,
       userId: user.id || user._id,
-      jobId: selectedJob.job._id
+      jobId: selectedJob.isSupport ? null : selectedJob.job._id
     });
 
     // Fetch messages history
     const fetchMessages = async () => {
       try {
         const token = user?.token || sessionStorage.getItem('token');
-        let url = `${import.meta.env.VITE_API_URL}/api/jobs/${selectedJob.job._id}/messages`;
-        if (user.role === 'client' && selectedJob.freelancer) {
-          const fId = selectedJob.freelancer._id || selectedJob.freelancer;
-          url += `?freelancerId=${fId}`;
-        } else if (user.role === 'freelancer') {
-          url += `?freelancerId=${user.id || user._id}`;
+        let url;
+        if (selectedJob.isSupport) {
+          url = `${import.meta.env.VITE_API_URL}/api/support/messages`;
+        } else {
+          url = `${import.meta.env.VITE_API_URL}/api/jobs/${selectedJob.job._id}/messages`;
+          if (user.role === 'client' && selectedJob.freelancer) {
+            const fId = selectedJob.freelancer._id || selectedJob.freelancer;
+            url += `?freelancerId=${fId}`;
+          } else if (user.role === 'freelancer') {
+            url += `?freelancerId=${user.id || user._id}`;
+          }
         }
         
         const res = await axios.get(url, {
@@ -187,13 +205,24 @@ export default function Chat() {
         scrollToBottom();
 
         // If there are unread incoming messages, mark them as read immediately
-        const hasUnread = res.data.some(m => m.receiver === (user.id || user._id) && !m.isRead);
-        if (hasUnread) {
-          socket.emit('mark_read', {
-            roomName: selectedJob.roomName,
-            userId: user.id || user._id,
-            jobId: selectedJob.job._id
-          });
+        if (selectedJob.isSupport) {
+          const hasUnread = res.data.some(m => m.senderModel === 'Admin' && !m.isRead);
+          if (hasUnread) {
+            socket.emit('mark_support_read', {
+              roomName: selectedJob.roomName,
+              userId: user.id || user._id,
+              isFromAdmin: false
+            });
+          }
+        } else {
+          const hasUnread = res.data.some(m => m.receiver === (user.id || user._id) && !m.isRead);
+          if (hasUnread) {
+            socket.emit('mark_read', {
+              roomName: selectedJob.roomName,
+              userId: user.id || user._id,
+              jobId: selectedJob.job._id
+            });
+          }
         }
       } catch (err) {
         console.error("Failed to fetch messages", err);
@@ -214,6 +243,29 @@ export default function Chat() {
           jobId: selectedJob.job._id
         });
       }
+    });
+
+    socket.on('receive_support_message', (data) => {
+      setMessages((prev) => [...prev, data]);
+      scrollToBottom();
+
+      const isMe = data.senderModel === 'User' && data.user === (user.id || user._id);
+      if (!isMe) {
+        socket.emit('mark_support_read', {
+          roomName: selectedJob.roomName,
+          userId: user.id || user._id,
+          isFromAdmin: false
+        });
+      }
+    });
+
+    socket.on('support_messages_marked_read', (data) => {
+      setMessages((prev) => prev.map(m => {
+        if (m.senderModel === 'User' && m.user === (user.id || user._id)) {
+          return { ...m, isRead: true };
+        }
+        return m;
+      }));
     });
 
     socket.on('messages_marked_read', (data) => {
@@ -261,6 +313,17 @@ export default function Chat() {
       username: user.name
     });
     setOtherUserTyping(false);
+
+    if (selectedJob.isSupport) {
+      socket.emit('send_support_message', {
+        userId: user.id || user._id,
+        senderModel: 'User',
+        content: message,
+        roomName: selectedJob.roomName
+      });
+      setMessage('');
+      return;
+    }
 
     let receiverId = null;
     if (user.role === 'client') {
@@ -506,9 +569,11 @@ export default function Chat() {
                   ✏️ Propose Counter-Offer
                 </button>
               )}
-              <div className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-full border border-slate-200">
-                ₹{selectedJob.budget.toLocaleString('en-IN')} - {selectedJob.status.toUpperCase()}
-              </div>
+              {!selectedJob.isSupport && (
+                <div className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-full border border-slate-200">
+                  ₹{selectedJob.budget.toLocaleString('en-IN')} - {selectedJob.status.toUpperCase()}
+                </div>
+              )}
             </div>
           </div>
 
@@ -619,7 +684,9 @@ export default function Chat() {
             )}
 
             {messages.map((msg, idx) => {
-              const isMe = msg.sender === (user.id || user._id);
+              const isMe = msg.senderModel 
+                ? (msg.senderModel === 'User' && msg.user === (user.id || user._id))
+                : (msg.sender === (user.id || user._id));
               return (
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}

@@ -21,6 +21,7 @@ const AboutUs = lazy(() => import('./pages/AboutUs'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const PaymentPage = lazy(() => import('./pages/PaymentPage'));
 const JobDetails = lazy(() => import('./pages/JobDetails'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 function AppNav() {
   const { user, logout, openAuth } = useAuth();
@@ -205,6 +206,9 @@ function AppRoutes() {
             path="/admin" 
             element={<AdminRoute><AdminPanel /></AdminRoute>} 
           />
+
+          {/* 404 Route */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </main>

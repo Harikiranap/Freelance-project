@@ -29,6 +29,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/reviews', require('./routes/reviews'));
+app.use('/api/support', require('./routes/support'));
 app.use('/api/contact', require('./routes/contact'));
 app.use('/api/users', userRoutes);
 app.use('/api/reviews', reviewRoutes);
@@ -50,6 +52,7 @@ const io = new Server(server, {
 });
 
 const Message = require('./models/Message');
+const SupportMessage = require('./models/SupportMessage');
 const User = require('./models/User');
 const Violation = require('./models/Violation');
 const { encrypt } = require('./utils/crypto');
@@ -203,6 +206,49 @@ io.on('connection', (socket) => {
       }
     } catch (err) {
       console.error('Error saving message:', err);
+    }
+  });
+
+  socket.on('mark_support_read', async (data) => {
+    // data expected: { roomName, userId, isFromAdmin }
+    const { roomName, userId, isFromAdmin } = data;
+    try {
+      await SupportMessage.updateMany(
+        { user: userId, senderModel: isFromAdmin ? 'User' : 'Admin', isRead: false },
+        { $set: { isRead: true } }
+      );
+      socket.to(roomName).emit('support_messages_marked_read', { userId });
+    } catch (err) {
+      console.error('Error marking support messages read:', err);
+    }
+  });
+
+  socket.on('send_support_message', async (data) => {
+    // data expected: { userId, senderModel, content, roomName }
+    const { userId, senderModel, content, roomName } = data;
+
+    const encryptedContent = encrypt(content);
+    const roomClients = io.sockets.adapter.rooms.get(roomName);
+    const isReadImmediately = roomClients && roomClients.size >= 2;
+
+    try {
+      const message = await SupportMessage.create({
+        user: userId,
+        senderModel,
+        content: encryptedContent,
+        isRead: isReadImmediately
+      });
+
+      io.to(roomName).emit('receive_support_message', {
+        _id: message._id,
+        user: userId,
+        senderModel,
+        content: content,
+        isRead: isReadImmediately,
+        createdAt: message.createdAt
+      });
+    } catch (err) {
+      console.error('Error saving support message:', err);
     }
   });
   
