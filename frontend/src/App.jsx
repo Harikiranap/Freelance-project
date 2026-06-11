@@ -50,8 +50,8 @@ function AppNav() {
         <div className="flex items-center gap-8">
           <Link to="/">
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 cursor-pointer">
-              <img src="/icon-transparent.png.png" alt="WorkSphere Logo" className="h-8 w-auto" />
-              <span className="text-2xl font-extrabold text-blue-600 tracking-tight">WorkSphere</span>
+              <img src="/icon-transparent.png.png" alt="WorkOwn Logo" className="h-8 w-auto" />
+              <span className="text-2xl font-extrabold text-blue-600 tracking-tight">WorkOwn</span>
             </motion.div>
           </Link>
           <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">

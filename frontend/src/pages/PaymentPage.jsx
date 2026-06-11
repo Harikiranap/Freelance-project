@@ -110,7 +110,7 @@ export default function PaymentPage() {
         key: keyRes.data.key,
         amount: order.amount,
         currency: order.currency || "INR",
-        name: "WorkSphere Ltd.",
+        name: "WorkOwn Ltd.",
         description: `Escrow Funding - Job ID: ${jobId.substring(0, 8)}`,
         order_id: order.id,
         handler: async function (response) {
@@ -271,7 +271,7 @@ export default function PaymentPage() {
                 <ShieldCheck size={20} />
               </div>
               <div className="space-y-1">
-                <h4 className="font-bold text-sm text-slate-800">Secure WorkSphere Escrow Protected</h4>
+                <h4 className="font-bold text-sm text-slate-800">Secure WorkOwn Escrow Protected</h4>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   Your funds are held securely in a dynamic vault. They will be released directly to the freelancer only after you verify and approve the final work deliverables.
                 </p>
@@ -316,8 +316,8 @@ export default function PaymentPage() {
             {/* Receipt Content Header */}
             <div className="text-center space-y-1">
               <div className="flex items-center justify-center gap-2">
-                <img src="/icon-transparent.png.png" alt="WorkSphere Logo" className="h-8 w-auto grayscale" />
-                <h1 className="text-xl font-black tracking-tighter text-slate-900 uppercase">WORKSphere</h1>
+                <img src="/icon-transparent.png.png" alt="WorkOwn Logo" className="h-8 w-auto grayscale" />
+                <h1 className="text-xl font-black tracking-tighter text-slate-900 uppercase">WorkOwn</h1>
               </div>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Secure Escrow Receipt</p>
               <p className="text-[9px] text-slate-400">Mangalore, MAQ - India</p>
@@ -413,7 +413,7 @@ export default function PaymentPage() {
             </div>
 
             <p className="text-[9px] text-center text-slate-400 leading-normal mt-2">
-              Thank you for trusting WorkSphere Escrow. Retain this digital thermal receipt for billing verification purposes.
+              Thank you for trusting WorkOwn Escrow. Retain this digital thermal receipt for billing verification purposes.
             </p>
 
             {/* Bottom Tear simulation effect */}

@@ -35,7 +35,7 @@ const generateReceiptHtml = ({
         
         <!-- Header -->
         <div style="text-align: center; margin-bottom: 16px;">
-          <h1 style="font-size: 20px; font-weight: 900; margin: 0; text-transform: uppercase; color: #0f172a; letter-spacing: -1px;">WORKSphere</h1>
+          <h1 style="font-size: 20px; font-weight: 900; margin: 0; text-transform: uppercase; color: #0f172a; letter-spacing: -1px;">WorkOwn</h1>
           <p style="font-size: 10px; color: #64748b; font-weight: bold; margin: 4px 0 0 0; text-transform: uppercase; letter-spacing: 1px;">Secure Escrow Receipt</p>
           <p style="font-size: 9px; color: #94a3b8; margin: 2px 0 0 0;">Mangalore, MAQ - India</p>
         </div>
@@ -120,7 +120,7 @@ const generateReceiptHtml = ({
 
         <!-- Footer Note -->
         <p style="font-size: 8px; color: #94a3b8; text-align: center; line-height: 1.3; margin: 8px 0 0 0;">
-          Thank you for trusting WorkSphere Escrow.<br />Retain this digital thermal receipt for billing verification purposes.
+          Thank you for trusting WorkOwn Escrow.<br />Retain this digital thermal receipt for billing verification purposes.
         </p>
 
       </div>
@@ -149,7 +149,7 @@ const sendReceiptEmail = async (client, payment, job) => {
 
     await sendEmail(
       client.email,
-      "Payment Receipt - WorkSphere Escrow",
+      "Payment Receipt - WorkOwn Escrow",
       `Your payment of INR ${payment.amount} for job "${job.title}" has been securely funded to escrow.`,
       htmlContent
     );
@@ -159,7 +159,7 @@ const sendReceiptEmail = async (client, payment, job) => {
         freelancer.email,
         "Escrow Funded - Start Working!",
         `Great news! The client has securely deposited INR ${payment.freelancerAmount || (payment.amount - payment.platformFee)} into escrow for the job "${job.title}". You can now safely begin your work!`,
-        `<div style="font-family: sans-serif; padding: 20px;"><h2>Escrow Funded</h2><p>Great news! The client has securely deposited your fee into the WorkSphere Escrow for the job <strong>"${job.title}"</strong>.</p><p>You can now safely begin your work knowing your payment is secured.</p></div>`
+        `<div style="font-family: sans-serif; padding: 20px;"><h2>Escrow Funded</h2><p>Great news! The client has securely deposited your fee into the WorkOwn Escrow for the job <strong>"${job.title}"</strong>.</p><p>You can now safely begin your work knowing your payment is secured.</p></div>`
       );
     }
   } catch (error) {

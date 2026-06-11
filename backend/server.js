@@ -190,10 +190,10 @@ io.on('connection', (socket) => {
         if (receiver && receiver.email) {
           sendEmail(
             receiver.email,
-            'New Message on WorkSphere',
+            'New Message on WorkOwn',
             'You have received a new message regarding your project.',
             `<div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-               <h2>WorkSphere Notification</h2>
+               <h2>WorkOwn Notification</h2>
                <p>You have received a new secure message.</p>
                <br/>
                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login to Reply</a>

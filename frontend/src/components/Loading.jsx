@@ -14,7 +14,7 @@ export default function Loading() {
         transition={{ duration: 0.5, yoyo: Infinity }}
         className="text-lg font-semibold text-slate-600"
       >
-        Loading WorkSphere...
+        Loading WorkOwn...
       </motion.h2>
     </div>
   );

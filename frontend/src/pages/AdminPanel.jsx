@@ -406,7 +406,7 @@ export default function AdminPanel() {
               W
             </div>
             <div>
-              <span className="font-extrabold text-slate-800 text-lg tracking-tight">WorkSphere</span>
+              <span className="font-extrabold text-slate-800 text-lg tracking-tight">WorkOwn</span>
               <span className="block text-[10px] text-blue-600 font-bold uppercase tracking-wider">Admin Engine</span>
             </div>
           </div>

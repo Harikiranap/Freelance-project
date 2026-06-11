@@ -45,7 +45,7 @@ const sendEmail = async (to, subject, text, html) => {
   if (transporter) {
     try {
       const info = await transporter.sendMail({
-        from: '"WorkSphere" <noreply@worksphere.com>',
+        from: '"WorkOwn" <noreply@WorkOwn.com>',
         to,
         subject,
         text,
