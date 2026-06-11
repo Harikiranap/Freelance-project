@@ -157,7 +157,10 @@ export default function Chat() {
     if (!selectedJob) return;
 
     // Connect to Socket.io server
-    socket = io(import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL + '');
+    socket = io(import.meta.env.VITE_API_URL, { 
+      transports: ['websocket'],
+      upgrade: false
+    });
     
     socket.emit('join_room', {
       roomName: selectedJob.roomName,
