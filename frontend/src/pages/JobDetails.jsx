@@ -38,15 +38,15 @@ export default function JobDetails() {
       const token = user?.token || sessionStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const jobRes = await axios.get(`http://localhost:5000/api/jobs/job/${id}`, { headers });
+      const jobRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/jobs/job/${id}`, { headers });
       setJob(jobRes.data);
       
       if (user?.role === 'client') {
-        const bidsRes = await axios.get(`http://localhost:5000/api/jobs/${id}/bids`, { headers });
+        const bidsRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/jobs/${id}/bids`, { headers });
         setBids(bidsRes.data);
       } else if (user?.role === 'freelancer') {
         // Freelancers aren't authorized to view all bids, so we check if they've already bid via my-jobs
-        const myJobsRes = await axios.get(`http://localhost:5000/api/jobs/my-jobs`, { headers });
+        const myJobsRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/jobs/my-jobs`, { headers });
         const hasBid = myJobsRes.data.some(j => j._id === id);
         if (hasBid) {
           setBids([{ freelancer: user.id }]); // Mock bid to trigger "already submitted" UI
@@ -92,7 +92,7 @@ export default function JobDetails() {
     setBiddingOn(true);
     try {
       const token = user?.token || sessionStorage.getItem('token');
-      await axios.post(`http://localhost:5000/api/jobs/${id}/bid`, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs/${id}/bid`, {
         amount: Number(bidAmount),
         proposal
       }, {
@@ -123,7 +123,7 @@ export default function JobDetails() {
     setIsAccepting(bidId);
     try {
       const token = user?.token || sessionStorage.getItem('token');
-      const res = await axios.post(`http://localhost:5000/api/jobs/bid/${bidId}/accept`, {}, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs/bid/${bidId}/accept`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success(`Proposal accepted! Proceeding to fund escrow for ₹${amount}`);

@@ -33,7 +33,7 @@ export default function PaymentPage() {
     try {
       setLoading(true);
       const token = user?.token || sessionStorage.getItem('token');
-      const res = await axios.get(`http://localhost:5000/api/jobs/job/${jobId}`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/jobs/job/${jobId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setJob(res.data);
@@ -63,7 +63,7 @@ export default function PaymentPage() {
       const token = user?.token || sessionStorage.getItem('token');
       
       // Step 1: Create Order
-      const orderRes = await axios.post('http://localhost:5000/api/payments/create-order', { jobId }, {
+      const orderRes = await axios.post(import.meta.env.VITE_API_URL + '/api/payments/create-order', { jobId }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -74,7 +74,7 @@ export default function PaymentPage() {
         toast.loading('Connecting to secure bank gateway...', { duration: 1500 });
         setTimeout(async () => {
           try {
-            await axios.post('http://localhost:5000/api/payments/verify', {
+            await axios.post(import.meta.env.VITE_API_URL + '/api/payments/verify', {
               razorpay_order_id: order.id,
               razorpay_payment_id: `mock_pay_${Math.random().toString(36).substring(7)}`,
               razorpay_signature: 'mock_sig_verified'
@@ -102,7 +102,7 @@ export default function PaymentPage() {
       }
       
       // Fetch public key from backend
-      const keyRes = await axios.get('http://localhost:5000/api/payments/config/key', {
+      const keyRes = await axios.get(import.meta.env.VITE_API_URL + '/api/payments/config/key', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -116,7 +116,7 @@ export default function PaymentPage() {
         handler: async function (response) {
           try {
             toast.loading('Verifying secure transaction...', { duration: 1500 });
-            await axios.post('http://localhost:5000/api/payments/verify', {
+            await axios.post(import.meta.env.VITE_API_URL + '/api/payments/verify', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature

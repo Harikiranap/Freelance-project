@@ -187,7 +187,7 @@ export default function Home() {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/jobs');
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/jobs');
         const fetchedJobs = res.data.jobs ? res.data.jobs : res.data;
         setJobs(fetchedJobs.slice(0, 6));
       } catch (err) {

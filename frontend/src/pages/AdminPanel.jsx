@@ -67,7 +67,7 @@ export default function AdminPanel() {
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/admin/stats', {
+      const res = await axios.get(import.meta.env.VITE_API_URL + '/api/admin/stats', {
         headers: getHeaders()
       });
       setStats(res.data);
@@ -81,7 +81,7 @@ export default function AdminPanel() {
 
   const fetchContactMessages = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/admin/contact-messages', {
+      const res = await axios.get(import.meta.env.VITE_API_URL + '/api/admin/contact-messages', {
         headers: getHeaders()
       });
       setContactMessages(res.data);
@@ -93,7 +93,7 @@ export default function AdminPanel() {
   const fetchViolations = async () => {
     setLoadingViolations(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/admin/violations', {
+      const res = await axios.get(import.meta.env.VITE_API_URL + '/api/admin/violations', {
         headers: getHeaders()
       });
       setViolations(res.data);
@@ -107,7 +107,7 @@ export default function AdminPanel() {
 
   const resolveContactMessage = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/admin/contact-messages/${id}/resolve`, {}, {
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/admin/contact-messages/${id}/resolve`, {}, {
         headers: getHeaders()
       });
       toast.success('Message marked as resolved');
@@ -126,7 +126,7 @@ export default function AdminPanel() {
   const deleteUser = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user? This is irreversible.")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/admin/users/${id}`, {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/admin/users/${id}`, {
         headers: getHeaders()
       });
       toast.success("User deleted successfully");
@@ -139,7 +139,7 @@ export default function AdminPanel() {
   const deleteJob = async (id) => {
     if (!window.confirm("Are you sure you want to delete this job? This is irreversible.")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/admin/jobs/${id}`, {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/admin/jobs/${id}`, {
         headers: getHeaders()
       });
       toast.success("Job deleted successfully");
@@ -151,7 +151,7 @@ export default function AdminPanel() {
 
   const approveJob = async (id) => {
     try {
-      await axios.post(`http://localhost:5000/api/jobs/${id}/approve`, {}, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs/${id}/approve`, {}, {
         headers: getHeaders()
       });
       toast.success("Job approved and published!");
@@ -163,7 +163,7 @@ export default function AdminPanel() {
 
   const approveFreelancer = async (id, adminRating) => {
     try {
-      await axios.post(`http://localhost:5000/api/admin/approve-freelancer/${id}`, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/admin/approve-freelancer/${id}`, {
         adminRating
       }, {
         headers: getHeaders()
@@ -178,7 +178,7 @@ export default function AdminPanel() {
 
   const revokeFreelancer = async (id) => {
     try {
-      await axios.post(`http://localhost:5000/api/admin/revoke-freelancer/${id}`, {}, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/admin/revoke-freelancer/${id}`, {}, {
         headers: getHeaders()
       });
       toast.success("Freelancer verification revoked.");
@@ -191,7 +191,7 @@ export default function AdminPanel() {
   const fetchChatLog = async (jobId) => {
     setChatLogModal({ isOpen: true, messages: [], jobId, loading: true });
     try {
-      const res = await axios.get(`http://localhost:5000/api/admin/resolve-dispute/${jobId}/messages`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/resolve-dispute/${jobId}/messages`, {
         headers: getHeaders()
       });
       setChatLogModal({ isOpen: true, messages: res.data, jobId, loading: false });
@@ -211,7 +211,7 @@ export default function AdminPanel() {
     if (!window.confirm(message)) return;
 
     try {
-      const res = await axios.post(`http://localhost:5000/api/admin/resolve-dispute/${jobId}`, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/admin/resolve-dispute/${jobId}`, {
         refundClient: isRefund
       }, {
         headers: getHeaders()

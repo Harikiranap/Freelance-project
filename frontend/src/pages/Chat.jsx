@@ -36,7 +36,7 @@ export default function Chat() {
   const fetchMyJobs = async () => {
     try {
       const token = user?.token || sessionStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/jobs/my-jobs', {
+      const res = await axios.get(import.meta.env.VITE_API_URL + '/api/jobs/my-jobs', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -44,7 +44,7 @@ export default function Chat() {
       for (const j of res.data) {
         if (user.role === 'client' && j.status === 'open') {
           // Client: fetch all bids for this open job to let client chat with each freelancer separately
-          const bidsRes = await axios.get(`http://localhost:5000/api/jobs/${j._id}/bids`, {
+          const bidsRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/jobs/${j._id}/bids`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           
@@ -79,7 +79,7 @@ export default function Chat() {
           }
         } else if (user.role === 'freelancer') {
           // Freelancer: find their own bid to show bidId and proposed price
-          const bidsRes = await axios.get(`http://localhost:5000/api/jobs/${j._id}/bids`, {
+          const bidsRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/jobs/${j._id}/bids`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           const myBid = bidsRes.data.find(b => b.freelancer?._id === user.id || b.freelancer === user.id);
@@ -157,7 +157,7 @@ export default function Chat() {
     if (!selectedJob) return;
 
     // Connect to Socket.io server
-    socket = io('http://localhost:5000');
+    socket = io(import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL + '');
     
     socket.emit('join_room', {
       roomName: selectedJob.roomName,
@@ -169,7 +169,7 @@ export default function Chat() {
     const fetchMessages = async () => {
       try {
         const token = user?.token || sessionStorage.getItem('token');
-        let url = `http://localhost:5000/api/jobs/${selectedJob.job._id}/messages`;
+        let url = `${import.meta.env.VITE_API_URL}/api/jobs/${selectedJob.job._id}/messages`;
         if (user.role === 'client' && selectedJob.freelancer) {
           const fId = selectedJob.freelancer._id || selectedJob.freelancer;
           url += `?freelancerId=${fId}`;
@@ -286,7 +286,7 @@ export default function Chat() {
   const handleAcceptCounterOffer = async () => {
     try {
       const token = user?.token || sessionStorage.getItem('token');
-      await axios.post(`http://localhost:5000/api/jobs/bid/${selectedJob.bidId}/counter/accept`, {}, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs/bid/${selectedJob.bidId}/counter/accept`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("🤝 Counter-offer accepted! Contract established.");
@@ -313,7 +313,7 @@ export default function Chat() {
   const handleRejectCounterOffer = async () => {
     try {
       const token = user?.token || sessionStorage.getItem('token');
-      await axios.post(`http://localhost:5000/api/jobs/bid/${selectedJob.bidId}/counter/reject`, {}, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs/bid/${selectedJob.bidId}/counter/reject`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Decline registered.");
@@ -355,7 +355,7 @@ export default function Chat() {
 
     try {
       const token = user?.token || sessionStorage.getItem('token');
-      await axios.post(`http://localhost:5000/api/jobs/bid/${selectedJob.bidId}/counter`, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs/bid/${selectedJob.bidId}/counter`, {
         amount: Number(counterAmount),
         message: counterMessage
       }, {

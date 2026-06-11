@@ -57,7 +57,7 @@ export default function CompleteProfile() {
       const payload = { ...formData, skills: skillsArray, companyName: formData.companyName };
 
       const res = await axios.put(
-        'http://localhost:5000/api/auth/complete-profile',
+        import.meta.env.VITE_API_URL + '/api/auth/complete-profile',
         payload
         // axios already has the auth header set globally from AuthContext
       );

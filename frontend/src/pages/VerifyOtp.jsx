@@ -20,7 +20,7 @@ export default function VerifyOtp() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/verify-otp', { email, otp });
+      const res = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/verify-otp', { email, otp });
       login(res.data.token, res.data);
       toast.success('Email verified successfully!');
       window.location.href = '/dashboard';

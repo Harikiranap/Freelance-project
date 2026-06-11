@@ -23,7 +23,7 @@ export default function EditProfile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/auth/me');
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/auth/me');
         const data = res.data;
         setFormData({
           name: data.name || '',
@@ -46,7 +46,7 @@ export default function EditProfile() {
     setError('');
     setSuccess('');
     try {
-      const res = await axios.put('http://localhost:5000/api/auth/profile', formData);
+      const res = await axios.put(import.meta.env.VITE_API_URL + '/api/auth/profile', formData);
       login(res.data.token, res.data);
       toast.success('Profile updated successfully!');
       setTimeout(() => navigate('/dashboard'), 2000);

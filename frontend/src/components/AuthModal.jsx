@@ -103,7 +103,7 @@ export default function AuthModal() {
     setIsSubmitting(true);
     try {
       if (forgotPasswordStep === 'email') {
-        const res = await axios.post('http://localhost:5000/api/auth/forgot-password', { email: resetEmail });
+        const res = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/forgot-password', { email: resetEmail });
         toast.success(res.data.message || 'OTP sent successfully!');
         setForgotPasswordStep('reset');
       } else {
@@ -123,7 +123,7 @@ export default function AuthModal() {
           setIsSubmitting(false);
           return;
         }
-        const res = await axios.post('http://localhost:5000/api/auth/reset-password', {
+        const res = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/reset-password', {
           email: resetEmail,
           otp: fullOtp,
           newPassword
@@ -154,13 +154,13 @@ export default function AuthModal() {
     
     try {
       if (isLogin) {
-        const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+        const res = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/login', { email, password });
         login(res.data.token, res.data);
         localStorage.removeItem('rememberedEmail');
         toast.success('Successfully logged in!');
         closeAuth();
       } else {
-        const res = await axios.post('http://localhost:5000/api/auth/register', { name, email, password, role, phoneNumber });
+        const res = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/register', { name, email, password, role, phoneNumber });
         toast.success('Registration successful. You can now log in.');
         setIsLogin(true); // switch to login modal
       }
@@ -181,7 +181,7 @@ export default function AuthModal() {
     setIsSubmitting(true);
     try {
       const user = await signInWithGoogle();
-      const res = await axios.post('http://localhost:5000/api/auth/google', { 
+      const res = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/google', { 
         name: user.displayName, 
         email: user.email 
       });
@@ -205,7 +205,7 @@ export default function AuthModal() {
   const handleGoogleRoleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/google/complete', {
+      const res = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/google/complete', {
         name: googleData.name,
         email: googleData.email,
         role: selectedRole
@@ -398,7 +398,7 @@ export default function AuthModal() {
                     onClick={async () => {
                       setIsSubmitting(true);
                       try {
-                        const res = await axios.post('http://localhost:5000/api/auth/forgot-password', { email: resetEmail });
+                        const res = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/forgot-password', { email: resetEmail });
                         toast.success(res.data.message || 'OTP resent successfully!');
                       } catch (err) {
                         toast.error(err.response?.data?.message || 'Failed to resend OTP');

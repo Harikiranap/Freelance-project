@@ -83,7 +83,7 @@ export default function Dashboard() {
   const fetchProfile = async () => {
     try {
       const token = user?.token || sessionStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/auth/me', {
+      const res = await axios.get(import.meta.env.VITE_API_URL + '/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProfile(res.data);
@@ -104,7 +104,7 @@ export default function Dashboard() {
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:5000/api/jobs');
+      const res = await axios.get(import.meta.env.VITE_API_URL + '/api/jobs');
       const fetchedJobs = res.data.jobs ? res.data.jobs : res.data;
       setJobs(fetchedJobs);
     } catch (err) {
@@ -119,7 +119,7 @@ export default function Dashboard() {
     try {
       setLoadingMyJobs(true);
       const token = user?.token || sessionStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/jobs/my-jobs', {
+      const res = await axios.get(import.meta.env.VITE_API_URL + '/api/jobs/my-jobs', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMyJobs(res.data);
@@ -154,7 +154,7 @@ export default function Dashboard() {
       const token = user?.token || sessionStorage.getItem('token');
       const skillsArray = jobForm.skills.split(',').map(s => s.trim()).filter(Boolean);
       
-      await axios.post('http://localhost:5000/api/jobs', {
+      await axios.post(import.meta.env.VITE_API_URL + '/api/jobs', {
         title: jobForm.title,
         description: jobForm.description,
         budget: Number(jobForm.budget),
@@ -181,7 +181,7 @@ export default function Dashboard() {
     try {
       setLoadingAi(jobId);
       const token = user?.token || sessionStorage.getItem('token');
-      const res = await axios.get(`http://localhost:5000/api/jobs/${jobId}/ai-match`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/jobs/${jobId}/ai-match`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAiMatches(prev => ({ ...prev, [jobId]: res.data }));
@@ -200,7 +200,7 @@ export default function Dashboard() {
     setViewingBidsJob(job);
     try {
       const token = user?.token || sessionStorage.getItem('token');
-      const res = await axios.get(`http://localhost:5000/api/jobs/${job._id}/bids`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/jobs/${job._id}/bids`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setJobBids(res.data);
@@ -222,7 +222,7 @@ export default function Dashboard() {
     setIsAccepting(bidId);
     try {
       const token = user?.token || sessionStorage.getItem('token');
-      const res = await axios.post(`http://localhost:5000/api/jobs/bid/${bidId}/accept`, {}, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs/bid/${bidId}/accept`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -255,7 +255,7 @@ export default function Dashboard() {
     setIsSubmittingWork(jobId);
     try {
       const token = user?.token || sessionStorage.getItem('token');
-      await axios.post(`http://localhost:5000/api/jobs/${jobId}/deliver`, { deliverableLink }, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs/${jobId}/deliver`, { deliverableLink }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Work delivered successfully! Waiting for client review.');
@@ -280,7 +280,7 @@ export default function Dashboard() {
     setIsReleasing(jobId);
     try {
       const token = user?.token || sessionStorage.getItem('token');
-      await axios.post(`http://localhost:5000/api/payments/release/job/${jobId}`, {}, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/payments/release/job/${jobId}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('🏆 Escrow funds released to freelancer! Project closed as completed.');
@@ -304,7 +304,7 @@ export default function Dashboard() {
     setIsDisputing(jobId);
     try {
       const token = user?.token || sessionStorage.getItem('token');
-      await axios.post(`http://localhost:5000/api/jobs/${jobId}/dispute`, {}, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs/${jobId}/dispute`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Dispute raised successfully. Admin will review shortly.');
@@ -326,7 +326,7 @@ export default function Dashboard() {
     setIsSubmittingReview(true);
     try {
       const token = user?.token || sessionStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/reviews', reviewForm, {
+      await axios.post(import.meta.env.VITE_API_URL + '/api/reviews', reviewForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Review submitted successfully!');
