@@ -474,7 +474,7 @@ export default function AuthModal() {
                       <input 
                         type="text" 
                         className="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-sm text-slate-900 placeholder-slate-400"
-                        placeholder="John Doe"
+                        placeholder="Your Name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
@@ -485,7 +485,7 @@ export default function AuthModal() {
                       <input 
                         type="tel" 
                         className="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-sm text-slate-900 placeholder-slate-400"
-                        placeholder="9876543210"
+                        placeholder="10 digit number"
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         required={!isLogin}
