@@ -5,6 +5,7 @@ const Message = require('../models/Message');
 const ContactMessage = require('../models/ContactMessage');
 const Violation = require('../models/Violation');
 const { decrypt } = require('../utils/crypto');
+const { sendEmail } = require('../utils/email');
 
 exports.getStats = async (req, res) => {
   try {
@@ -172,6 +173,26 @@ exports.resolveContactMessage = async (req, res) => {
     message.status = 'resolved';
     await message.save();
     res.json({ message: 'Contact message resolved', data: message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.replyContactMessage = async (req, res) => {
+  try {
+    const { replyText } = req.body;
+    const message = await ContactMessage.findById(req.params.id);
+    if (!message) return res.status(404).json({ message: 'Message not found' });
+    
+    await sendEmail(
+      message.email,
+      `Re: ${message.subject}`,
+      `Hello ${message.name || 'User'},\n\nRegarding your inquiry: "${message.subject}"\n\nAdmin Reply:\n${replyText}\n\nBest Regards,\nWorkOwn Team`
+    );
+
+    message.status = 'resolved';
+    await message.save();
+    res.json({ message: 'Reply sent and message resolved', data: message });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

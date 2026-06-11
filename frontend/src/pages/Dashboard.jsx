@@ -666,7 +666,7 @@ export default function Dashboard() {
 
                       <div className="flex gap-2">
                       {/* Freelancer submits work */}
-                      {user?.role === 'freelancer' && job.status === 'in-progress' && (
+                      {user?.role === 'freelancer' && (job.status === 'in-progress' || job.status === 'completed' || job.status === 'delivered') && (
                         <button
                           onClick={() => handleDeliverClick(job._id)}
                           disabled={isSubmittingWork === job._id}

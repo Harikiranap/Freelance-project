@@ -269,7 +269,9 @@ CREATE TABLE escrow_payments (
                   <span>{freelancer.location || 'Remote'}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-lg font-black text-blue-600">₹{(freelancer.hourlyRate || 800).toLocaleString('en-IN')}</span>
+                  <span className="text-lg font-black text-blue-600">
+                    {freelancer.hourlyRate > 0 ? `₹${freelancer.hourlyRate.toLocaleString('en-IN')}` : 'Rate Negotiable'}
+                  </span>
                   <span className="text-[9px] text-slate-400 block -mt-1 font-semibold">per hour</span>
                 </div>
               </div>
@@ -344,7 +346,9 @@ CREATE TABLE escrow_payments (
                 <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                   <div className="text-center">
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Hourly Cost</p>
-                    <p className="text-xl font-black text-blue-600 mt-1">₹{(selectedFreelancer.hourlyRate || 800).toLocaleString('en-IN')}</p>
+                    <p className="text-xl font-black text-blue-600 mt-1">
+                      {selectedFreelancer.hourlyRate > 0 ? `₹${selectedFreelancer.hourlyRate.toLocaleString('en-IN')}` : 'Rate Negotiable'}
+                    </p>
                   </div>
                   <div className="text-center border-l border-slate-200">
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Average Rating</p>

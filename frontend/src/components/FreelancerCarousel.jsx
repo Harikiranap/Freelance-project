@@ -138,8 +138,8 @@ export default function FreelancerCarousel() {
                 <Avatar name={freelancer.name} size={14} /> View Profile
               </button>
               <div className="text-right">
-                <div className="text-base font-extrabold text-blue-600">
-                  ${freelancer.hourlyRate || 0}
+                <div className="font-black text-slate-800">
+                  {freelancer.hourlyRate > 0 ? `$${freelancer.hourlyRate}` : 'Negotiable'}
                 </div>
                 <div className="text-[10px] text-slate-400 font-medium -mt-1">per hour</div>
               </div>

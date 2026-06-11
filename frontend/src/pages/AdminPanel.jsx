@@ -117,6 +117,25 @@ export default function AdminPanel() {
     }
   };
 
+  const [replyModal, setReplyModal] = useState({ isOpen: false, messageId: null, email: '', replyText: '' });
+
+  const handleReplySubmit = async () => {
+    if (!replyModal.replyText.trim()) return toast.error('Please enter a reply message');
+    try {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/admin/contact-messages/${replyModal.messageId}/reply`, {
+        replyText: replyModal.replyText
+      }, {
+        headers: getHeaders()
+      });
+      toast.success('Reply sent via email and message resolved');
+      setReplyModal({ isOpen: false, messageId: null, email: '', replyText: '' });
+      fetchContactMessages();
+      fetchStats();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to send reply');
+    }
+  };
+
   useEffect(() => {
     fetchStats();
     fetchContactMessages();
@@ -1468,12 +1487,20 @@ export default function AdminPanel() {
                               </td>
                               <td className="p-4 text-right">
                                 {msg.status === 'open' && (
-                                  <button 
-                                    onClick={() => resolveContactMessage(msg._id)}
-                                    className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
-                                  >
-                                    Mark Resolved
-                                  </button>
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button 
+                                      onClick={() => setReplyModal({ isOpen: true, messageId: msg._id, email: msg.email, replyText: '' })}
+                                      className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-colors"
+                                    >
+                                      Reply
+                                    </button>
+                                    <button 
+                                      onClick={() => resolveContactMessage(msg._id)}
+                                      className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
+                                    >
+                                      Mark Resolved
+                                    </button>
+                                  </div>
                                 )}
                               </td>
                             </tr>
@@ -1714,6 +1741,64 @@ export default function AdminPanel() {
                   className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs shadow-lg hover:shadow-emerald-600/20 transition-all active:scale-95"
                 >
                   Approve Account
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* Reply to Contact Us Message Modal */}
+      <AnimatePresence>
+        {replyModal.isOpen && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setReplyModal({ isOpen: false, messageId: null, email: '', replyText: '' })}
+              className="absolute inset-0"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-white border border-slate-200/80 rounded-3xl p-6 shadow-2xl z-10"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <MessageSquare className="text-blue-500" size={20} />
+                  Reply to User
+                </h3>
+                <button
+                  onClick={() => setReplyModal({ isOpen: false, messageId: null, email: '', replyText: '' })}
+                  className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-xl transition-colors"
+                >
+                  <XCircle size={20} />
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-xs text-slate-500 mb-2 font-semibold">Replying to: {replyModal.email}</p>
+                <textarea
+                  value={replyModal.replyText}
+                  onChange={(e) => setReplyModal({ ...replyModal, replyText: e.target.value })}
+                  placeholder="Type your response here. This will be sent as an email to the user..."
+                  className="w-full h-32 p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                ></textarea>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setReplyModal({ isOpen: false, messageId: null, email: '', replyText: '' })}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReplySubmit}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-colors"
+                >
+                  Send Reply
                 </button>
               </div>
             </motion.div>
