@@ -196,7 +196,7 @@ io.on('connection', (socket) => {
                <h2>WorkSphere Notification</h2>
                <p>You have received a new secure message.</p>
                <br/>
-               <a href="http://localhost:5173/dashboard" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login to Reply</a>
+               <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login to Reply</a>
              </div>`
           );
         }
