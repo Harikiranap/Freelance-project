@@ -316,7 +316,7 @@ export default function PaymentPage() {
             {/* Receipt Content Header */}
             <div className="text-center space-y-1">
               <div className="flex items-center justify-center gap-2">
-                <img src="/icon-transparent.png.png" alt="WorkOwn Logo" className="h-8 w-auto grayscale" />
+                <img src="/logo.png" alt="WorkOwn Logo" className="h-8 w-auto grayscale" />
                 <h1 className="text-xl font-black tracking-tighter text-slate-900 uppercase">WorkOwn</h1>
               </div>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Secure Escrow Receipt</p>

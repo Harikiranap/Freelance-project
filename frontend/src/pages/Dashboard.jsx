@@ -363,7 +363,7 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <img src="/icon-transparent.png.png" alt="WorkOwn Logo" className="h-10 w-auto" />
+            <img src="/logo.png" alt="WorkOwn Logo" className="h-10 w-auto" />
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">WorkOwn Portal</h1>
           </div>
           <p className="text-slate-500 mt-1">Collaborate securely using AI matches, encrypted chat, and escrow payments.</p>

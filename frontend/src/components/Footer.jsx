@@ -27,7 +27,7 @@ export default function Footer() {
       <footer className="py-16 bg-white text-slate-500 text-center border-t border-slate-100 relative z-10 w-full mt-auto">
         <div className="max-w-7xl mx-auto px-4 space-y-6">
           <div className="flex justify-center items-center gap-2 text-2xl font-black text-slate-900 tracking-tight">
-            <img src="/icon-transparent.png.png" alt="WorkOwn Logo" className="h-8 w-auto grayscale opacity-80" />
+            <img src="/logo.png" alt="WorkOwn Logo" className="h-8 w-auto grayscale opacity-80" />
             <span>WorkOwn</span>
           </div>
           <p className="text-sm font-medium text-slate-400">&copy; {new Date().getFullYear()} WorkOwn. Built with cryptographic verification.</p>
