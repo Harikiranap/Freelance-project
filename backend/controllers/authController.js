@@ -157,7 +157,7 @@ exports.googleLogin = async (req, res) => {
 
 exports.completeProfile = async (req, res) => {
   try {
-    const { skills, portfolioUrl, phoneNumber, upiId, bankAccount, location } = req.body;
+    const { skills, portfolioUrl, phoneNumber, upiId, bankAccount, location, experience } = req.body;
     const user = await User.findById(req.user.id);
 
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -166,6 +166,7 @@ exports.completeProfile = async (req, res) => {
     user.portfolioUrl = portfolioUrl;
     user.phoneNumber = phoneNumber;
     if (location) user.location = location;
+    if (experience) user.experience = experience;
     if (upiId) user.upiId = encrypt(upiId);
     if (bankAccount) user.bankAccount = encrypt(bankAccount);
     
@@ -222,7 +223,7 @@ exports.googleComplete = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { companyName, phoneNumber, skills, portfolioUrl, location } = req.body;
+    const { companyName, phoneNumber, skills, portfolioUrl, location, experience } = req.body;
     const user = await User.findById(req.user.id);
 
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -235,6 +236,7 @@ exports.updateProfile = async (req, res) => {
     } else if (user.role === 'freelancer') {
       if (skills) user.skills = Array.isArray(skills) ? skills : skills.split(',').map(s => s.trim()).filter(Boolean);
       if (portfolioUrl) user.portfolioUrl = portfolioUrl;
+      if (experience) user.experience = experience;
     }
     
     await user.save();

@@ -12,6 +12,7 @@ export default function CompleteProfile() {
     companyName: '',
     skills: '',
     portfolioUrl: '',
+    experience: '',
     upiId: '',
     location: ''
   });
@@ -81,6 +82,11 @@ export default function CompleteProfile() {
 
       if (!formData.portfolioUrl.trim()) {
         toast.error('Please enter your portfolio or GitHub URL.');
+        return;
+      }
+      
+      if (!formData.experience.trim()) {
+        toast.error('Please enter your years of professional experience.');
         return;
       }
       
@@ -209,6 +215,21 @@ export default function CompleteProfile() {
                   placeholder="React, Node.js, Python, UI/UX"
                   value={formData.skills}
                   onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Professional Experience <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="50"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  placeholder="Years of experience (e.g. 3)"
+                  value={formData.experience}
+                  onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
                 />
               </div>
 
