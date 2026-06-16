@@ -11,7 +11,8 @@ const generateToken = (user) => {
     isProfileComplete: user.isProfileComplete, 
     name: user.name,
     email: user.email,
-    phoneNumber: user.phoneNumber
+    phoneNumber: user.phoneNumber,
+    profilePicture: user.profilePicture
   }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
@@ -118,6 +119,7 @@ exports.login = async (req, res) => {
         role: user.role,
         phoneNumber: user.phoneNumber,
         isProfileComplete: user.isProfileComplete,
+        profilePicture: user.profilePicture,
         token: generateToken(user),
       });
     } else {
@@ -130,7 +132,7 @@ exports.login = async (req, res) => {
 
 exports.googleLogin = async (req, res) => {
   try {
-    const { name, email } = req.body;
+    const { name, email, photoURL } = req.body;
     let user = await User.findOne({ email });
 
     if (!user) {
@@ -138,8 +140,15 @@ exports.googleLogin = async (req, res) => {
       return res.status(202).json({
         requiresRole: true,
         name,
-        email
+        email,
+        photoURL
       });
+    }
+
+    // Update photo URL if provided and user doesn't have one
+    if (photoURL && !user.profilePicture) {
+      user.profilePicture = photoURL;
+      await user.save();
     }
 
     res.json({
@@ -148,6 +157,7 @@ exports.googleLogin = async (req, res) => {
       email: user.email,
       role: user.role,
       isProfileComplete: user.isProfileComplete,
+      profilePicture: user.profilePicture,
       token: generateToken(user),
     });
   } catch (error) {
@@ -179,6 +189,7 @@ exports.completeProfile = async (req, res) => {
       email: user.email,
       role: user.role,
       isProfileComplete: user.isProfileComplete,
+      profilePicture: user.profilePicture,
       token: generateToken(user),
     });
   } catch (error) {
@@ -188,7 +199,7 @@ exports.completeProfile = async (req, res) => {
 
 exports.googleComplete = async (req, res) => {
   try {
-    const { name, email, role } = req.body;
+    const { name, email, role, photoURL } = req.body;
     let user = await User.findOne({ email });
 
     if (user) {
@@ -205,7 +216,8 @@ exports.googleComplete = async (req, res) => {
       password: hashedPassword,
       role: role, 
       authProvider: 'google',
-      isVerified: true
+      isVerified: true,
+      profilePicture: photoURL
     });
 
     res.status(201).json({
@@ -214,6 +226,7 @@ exports.googleComplete = async (req, res) => {
       email: user.email,
       role: user.role,
       isProfileComplete: user.isProfileComplete,
+      profilePicture: user.profilePicture,
       token: generateToken(user),
     });
   } catch (error) {
@@ -247,6 +260,7 @@ exports.updateProfile = async (req, res) => {
       email: user.email,
       role: user.role,
       isProfileComplete: user.isProfileComplete,
+      profilePicture: user.profilePicture,
       token: generateToken(user),
     });
   } catch (error) {

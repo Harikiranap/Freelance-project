@@ -165,10 +165,10 @@ export default function AuthModal() {
         setIsLogin(true); // switch to login modal
       }
     } catch (err) {
-      if (err.response?.data?.requireVerification) {
+      if (err.message === 'Network Error') {
+        toast.error('Unable to connect to server. Please try again.');
+      } else if (err.response?.data?.requireVerification) {
         toast.error('Please verify your email first.');
-        // If we had OTP verification in modal, we'd switch state. Since it's a separate route currently,
-        // we could redirect or handle it. For now, just show error.
       } else {
         toast.error(err.response?.data?.message || (isLogin ? 'Login failed' : 'Registration failed'));
       }
@@ -183,11 +183,12 @@ export default function AuthModal() {
       const user = await signInWithGoogle();
       const res = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/google', { 
         name: user.displayName, 
-        email: user.email 
+        email: user.email,
+        photoURL: user.photoURL
       });
       
       if (res.status === 202 && res.data.requiresRole) {
-        setGoogleData({ name: res.data.name, email: res.data.email });
+        setGoogleData({ name: res.data.name, email: res.data.email, photoURL: res.data.photoURL });
         setRequiresRole(true);
       } else {
         login(res.data.token, res.data);
@@ -196,7 +197,11 @@ export default function AuthModal() {
       }
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || err.message || 'Google Sign-In Failed');
+      if (err.message === 'Network Error') {
+        toast.error('Unable to connect to server. Please try again.');
+      } else {
+        toast.error(err.response?.data?.message || err.message || 'Google Sign-In Failed');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -208,13 +213,18 @@ export default function AuthModal() {
       const res = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/google/complete', {
         name: googleData.name,
         email: googleData.email,
-        role: selectedRole
+        role: selectedRole,
+        photoURL: googleData.photoURL
       });
       login(res.data.token, res.data);
       toast.success('Registration complete!');
       closeAuth();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to complete Google registration');
+      if (err.message === 'Network Error') {
+        toast.error('Unable to connect to server. Please try again.');
+      } else {
+        toast.error(err.response?.data?.message || 'Failed to complete Google registration');
+      }
     } finally {
       setIsSubmitting(false);
     }

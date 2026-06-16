@@ -1,7 +1,20 @@
 import React from 'react';
 import { User } from 'lucide-react';
 
-const Avatar = ({ name, size = 32, className = '' }) => {
+const Avatar = ({ name, size = 32, className = '', src }) => {
+  if (src) {
+    return (
+      <img 
+        src={src}
+        alt={name || 'User Avatar'}
+        className={`rounded-full object-cover shadow-sm border border-slate-200 ${className}`}
+        style={{ width: size, height: size }}
+        title={name}
+        referrerPolicy="no-referrer"
+      />
+    );
+  }
+
   if (!name) {
     return (
       <div 

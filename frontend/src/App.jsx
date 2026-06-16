@@ -81,7 +81,7 @@ function AppNav() {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 hover:bg-slate-50 transition-colors"
                 >
-                  <Avatar name={user.name} size={32} />
+                  <Avatar name={user.name} src={user.profilePicture} size={32} />
                   <ChevronDown size={16} className="text-slate-400" />
                 </button>
 
@@ -175,7 +175,7 @@ function AppNav() {
               
               {user && (
                 <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm shrink-0">
-                  <Avatar name={user.name} size={48} />
+                  <Avatar name={user.name} src={user.profilePicture} size={48} />
                   <div className="overflow-hidden">
                     <p className="text-sm font-bold text-slate-800 truncate">{user.name}</p>
                     <p className="text-xs text-slate-500 capitalize truncate">{user.role}</p>

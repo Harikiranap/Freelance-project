@@ -273,7 +273,7 @@ export default function JobDetails() {
                         className="bg-white border border-blue-100 rounded-xl p-4 shadow-sm hover:shadow hover:border-blue-300 transition-all text-left"
                       >
                         <div className="flex gap-3">
-                          <Avatar name={bid.freelancer?.name} size={36} className="bg-blue-500 text-white font-bold" />
+                          <Avatar name={bid.freelancer?.name} src={bid.freelancer?.profilePicture} size={36} className="bg-blue-500 text-white font-bold" />
                           <div className="flex-1 min-w-0">
                             <h4 className="font-bold text-sm text-slate-800 truncate">{bid.freelancer?.name}</h4>
                             <p className="text-[10px] text-slate-500 truncate">{bid.freelancer?.email}</p>
@@ -439,7 +439,7 @@ export default function JobDetails() {
               <div className="p-6 space-y-5 overflow-y-auto max-h-[60vh] custom-scrollbar text-xs">
                 {/* Freelancer Profile */}
                 <div className="flex gap-3 items-center bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                  <Avatar name={selectedBid.freelancer?.name} size={40} className="bg-blue-500 text-white font-bold" />
+                  <Avatar name={selectedBid.freelancer?.name} src={selectedBid.freelancer?.profilePicture} size={40} className="bg-blue-500 text-white font-bold" />
                   <div className="min-w-0 flex-1">
                     <h3 className="font-bold text-sm text-slate-800 truncate">{selectedBid.freelancer?.name}</h3>
                     <p className="text-[10px] text-slate-400 truncate mt-0.5">{selectedBid.freelancer?.email}</p>

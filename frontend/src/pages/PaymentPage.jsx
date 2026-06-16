@@ -234,7 +234,7 @@ export default function PaymentPage() {
               {/* Client Profile */}
               <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-3">
                 <div className="flex items-center gap-2.5">
-                  <Avatar name={clientName} size={40} className="border-blue-100 text-blue-600" />
+                  <Avatar name={clientName} src={job.client?.profilePicture} size={40} className="border-blue-100 text-blue-600" />
                   <div>
                     <h4 className="font-bold text-sm text-slate-800 truncate">{clientName}</h4>
                     <p className="text-[10px] text-slate-400 font-semibold uppercase">{clientCompany}</p>
@@ -249,7 +249,7 @@ export default function PaymentPage() {
               {/* Freelancer Profile */}
               <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-3">
                 <div className="flex items-center gap-2.5">
-                  <Avatar name={freelancerName} size={40} className="border-slate-100 text-slate-600" />
+                  <Avatar name={freelancerName} src={job.selectedFreelancer?.profilePicture} size={40} className="border-slate-100 text-slate-600" />
                   <div>
                     <h4 className="font-bold text-sm text-slate-800 truncate">{freelancerName}</h4>
                     <p className="text-[10px] text-slate-400 font-semibold uppercase">Verified Freelancer</p>

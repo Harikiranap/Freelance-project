@@ -648,7 +648,7 @@ export default function Dashboard() {
                         </Link>
                       </h3>
                       <div className="flex items-center gap-2 mt-2">
-                        <Avatar name={user?.role === 'client' ? job.selectedFreelancer?.name : job.client?.name} size={24} />
+                        <Avatar name={user?.role === 'client' ? job.selectedFreelancer?.name : job.client?.name} src={user?.role === 'client' ? job.selectedFreelancer?.profilePicture : job.client?.profilePicture} size={24} />
                         <p className="text-xs text-slate-500">
                           {user?.role === 'client' 
                             ? `Hired Freelancer: ${job.selectedFreelancer?.name || 'None Assigned'}`
@@ -803,7 +803,7 @@ export default function Dashboard() {
                           {aiMatches[job._id].slice(0, 1).map((match, idx) => (
                             <div key={idx} className="bg-white border border-slate-100 rounded-xl p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
                               <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setSelectedProfile(match.freelancer)}>
-                                <Avatar name={match.freelancer.name} size={36} className="border-slate-100 text-slate-600 group-hover:ring-2 ring-blue-500 transition-all" />
+                                <Avatar name={match.freelancer.name} src={match.freelancer.profilePicture} size={36} className="border-slate-100 text-slate-600 group-hover:ring-2 ring-blue-500 transition-all" />
                                 <div>
                                   <div className="font-bold text-sm text-slate-800 group-hover:text-blue-600 transition-colors">{match.freelancer.name}</div>
                                   <div className="text-[10px] font-semibold text-slate-400">Rating: {match.freelancer.rating} ⭐</div>
@@ -1003,7 +1003,7 @@ export default function Dashboard() {
               >✕</button>
             </div>
             <div className="p-6 flex flex-col items-center">
-              <Avatar name={selectedProfile.name} size={80} className="bg-blue-500 text-white font-bold text-2xl mb-4" />
+              <Avatar name={selectedProfile.name} src={selectedProfile.profilePicture} size={80} className="bg-blue-500 text-white font-bold text-2xl mb-4" />
               <h3 className="font-bold text-xl text-slate-800">{selectedProfile.name}</h3>
               <div className="flex items-center gap-1 text-sm font-bold text-slate-600 mt-1">
                 <Star size={14} className="text-amber-500 fill-amber-500" />

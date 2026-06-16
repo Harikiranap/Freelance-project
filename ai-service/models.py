@@ -6,6 +6,7 @@ class Freelancer(BaseModel):
     name: str = ""
     skills: List[str]
     rating: float = 5.0
+    profilePicture: Optional[str] = None
 
 class Job(BaseModel):
     id: str

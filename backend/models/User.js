@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema(
       default: 'email',
       enum: ['email', 'google']
     },
+    profilePicture: { type: String },
     role: { type: String, enum: ['client', 'freelancer', 'admin'], required: true },
     phoneNumber: { type: String },
     

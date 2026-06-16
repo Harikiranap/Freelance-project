@@ -85,7 +85,7 @@ export default function FreelancerCarousel() {
             className="min-w-[280px] w-[280px] bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all snap-start flex flex-col items-center p-6 text-center"
           >
             <div className="relative mb-3">
-              <Avatar name={freelancer.name} size={70} className="ring-4 ring-blue-50 shadow-sm" />
+              <Avatar name={freelancer.name} src={freelancer.profilePicture} size={70} className="ring-4 ring-blue-50 shadow-sm" />
               {freelancer.isVerified && (
                 <div className="absolute bottom-0 right-0 bg-white rounded-full">
                   <CheckCircle size={18} className="text-blue-500" />
@@ -135,7 +135,7 @@ export default function FreelancerCarousel() {
 
             <div className="mt-auto w-full flex items-center justify-between border-t border-slate-100 pt-4">
               <button className="px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded text-xs transition-colors flex items-center gap-1.5 shadow-sm">
-                <Avatar name={freelancer.name} size={14} /> View Profile
+                <Avatar name={freelancer.name} src={freelancer.profilePicture} size={14} /> View Profile
               </button>
               <div className="text-right">
                 <div className="font-black text-slate-800">

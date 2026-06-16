@@ -224,7 +224,7 @@ CREATE TABLE escrow_payments (
               {/* Top Details Card */}
               <div className="flex items-start gap-4 mb-4">
                 <div className="relative flex-shrink-0">
-                  <Avatar name={freelancer.name} size={60} className="ring-4 ring-blue-50 shadow-sm" />
+                  <Avatar name={freelancer.name} src={freelancer.profilePicture} size={60} className="ring-4 ring-blue-50 shadow-sm" />
                   {freelancer.isFreelancerApproved && (
                     <div className="absolute bottom-0 right-0 bg-white rounded-full p-0.5 border border-slate-100 shadow-sm">
                       <CheckCircle size={14} className="text-blue-500 fill-blue-50" />
@@ -322,7 +322,7 @@ CREATE TABLE escrow_payments (
                 </button>
 
                 <div className="flex gap-4 items-center">
-                  <Avatar name={selectedFreelancer.name} size={64} className="ring-4 ring-blue-50 shadow-sm" />
+                  <Avatar name={selectedFreelancer.name} src={selectedFreelancer.profilePicture} size={64} className="ring-4 ring-blue-50 shadow-sm" />
                   <div>
                     <h2 className="text-xl font-bold text-slate-900 flex items-center gap-1.5">
                       {selectedFreelancer.name}
@@ -509,7 +509,7 @@ CREATE TABLE escrow_payments (
 
                       {/* Profile badge details */}
                       <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-2xl flex items-center gap-2">
-                        <Avatar name={portfolioTarget.name} size={30} className="border border-slate-700" />
+                        <Avatar name={portfolioTarget.name} src={portfolioTarget.profilePicture} size={30} className="border border-slate-700" />
                         <div className="min-w-0">
                           <p className="text-[10px] font-bold text-white truncate">{portfolioTarget.name}</p>
                           <p className="text-[8px] text-emerald-400 font-bold uppercase flex items-center gap-0.5 tracking-wider">

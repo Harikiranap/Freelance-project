@@ -16,6 +16,7 @@ const decodeToken = (token) => {
       name: payload.name,
       email: payload.email,
       phoneNumber: payload.phoneNumber,
+      profilePicture: payload.profilePicture,
     };
   } catch {
     return null;

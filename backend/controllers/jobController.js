@@ -29,7 +29,7 @@ exports.getJobs = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const jobs = await Job.find({ status: 'open', isApproved: true })
-      .populate('client', 'name companyName')
+      .populate('client', 'name companyName profilePicture')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -50,7 +50,7 @@ exports.getJobs = async (req, res) => {
 exports.getMyJobs = async (req, res) => {
   try {
     if (req.user.role === 'client') {
-      const jobs = await Job.find({ client: req.user.id }).populate('selectedFreelancer', 'name email').sort({ createdAt: -1 }).lean();
+      const jobs = await Job.find({ client: req.user.id }).populate('selectedFreelancer', 'name email profilePicture').sort({ createdAt: -1 }).lean();
       
       // Attach bid count to each job
       const jobsWithBids = await Promise.all(jobs.map(async (job) => {
@@ -149,7 +149,7 @@ exports.getJobBids = async (req, res) => {
       query.freelancer = req.user.id;
     }
     
-    const bids = await Bid.find(query).populate('freelancer', 'name email skills rating');
+    const bids = await Bid.find(query).populate('freelancer', 'name email skills rating profilePicture');
     res.json(bids);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -273,8 +273,8 @@ exports.deliverJob = async (req, res) => {
 exports.getJobById = async (req, res) => {
   try {
     const job = await Job.findById(req.params.jobId)
-      .populate('client', 'name email companyName')
-      .populate('selectedFreelancer', 'name email skills rating portfolioUrl experience location');
+      .populate('client', 'name email companyName profilePicture')
+      .populate('selectedFreelancer', 'name email skills rating portfolioUrl experience location profilePicture');
     if (!job) return res.status(404).json({ message: 'Job not found' });
     res.json(job);
   } catch (error) {
@@ -311,7 +311,7 @@ exports.getAiMatches = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to get AI matches for this job' });
     }
 
-    const freelancers = await User.find({ role: 'freelancer' }).select('_id skills name username rating profileCompleteness');
+    const freelancers = await User.find({ role: 'freelancer' }).select('_id skills name username rating profileCompleteness profilePicture');
 
     const payload = {
       job: {
