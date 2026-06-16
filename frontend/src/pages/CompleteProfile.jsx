@@ -12,11 +12,45 @@ export default function CompleteProfile() {
     companyName: '',
     skills: '',
     portfolioUrl: '',
-    upiId: ''
+    upiId: '',
+    location: ''
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user, login } = useAuth();
+  const [fetchingLocation, setFetchingLocation] = useState(false);
+
+  const fetchLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+    
+    setFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
+        const res = await axios.get(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+        const city = res.data.city || res.data.locality || '';
+        const country = res.data.countryName || '';
+        const locString = [city, country].filter(Boolean).join(', ');
+        
+        if (locString) {
+          setFormData(prev => ({ ...prev, location: locString }));
+          toast.success('Location detected successfully!');
+        } else {
+          toast.error('Could not determine exact city');
+        }
+      } catch (err) {
+        toast.error('Failed to fetch location data');
+      } finally {
+        setFetchingLocation(false);
+      }
+    }, () => {
+      toast.error('Permission denied. Please allow location access.');
+      setFetchingLocation(false);
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,6 +81,11 @@ export default function CompleteProfile() {
 
       if (!formData.portfolioUrl.trim()) {
         toast.error('Please enter your portfolio or GitHub URL.');
+        return;
+      }
+      
+      if (!formData.location.trim()) {
+        toast.error('Please enter or detect your location.');
         return;
       }
     }
@@ -120,18 +159,40 @@ export default function CompleteProfile() {
             )}
             
             {user?.role !== 'client' && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Portfolio URL <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="url"
-                  className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                  placeholder="https://github.com/yourname"
-                  value={formData.portfolioUrl}
-                  onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
-                />
-              </div>
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Portfolio URL <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="https://github.com/yourname"
+                    value={formData.portfolioUrl}
+                    onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2 flex justify-between items-center">
+                    <span>Location <span className="text-red-500">*</span></span>
+                    <button 
+                      type="button" 
+                      onClick={fetchLocation} 
+                      disabled={fetchingLocation}
+                      className="text-xs text-blue-600 font-bold hover:underline disabled:text-slate-400"
+                    >
+                      {fetchingLocation ? 'Detecting...' : 'Auto-Detect 📍'}
+                    </button>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="e.g. Bangalore, India"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  />
+                </div>
+              </>
             )}
           </div>
 

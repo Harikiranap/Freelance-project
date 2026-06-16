@@ -399,19 +399,20 @@ export default function Dashboard() {
       </div>
 
       {/* Premium Tab Mechanism */}
-      <div className="flex bg-slate-100/80 p-1.5 rounded-2xl w-full max-w-md border border-slate-200/50">
+      {/* Premium Tab Mechanism */}
+      <div className="flex bg-slate-100/80 p-1.5 rounded-2xl w-full max-w-2xl border border-slate-200/50 overflow-x-auto">
         {user?.role === 'client' ? (
           <>
             <button
               onClick={() => setActiveTab('talents')}
-              className={`flex-1 py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'talents' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 min-w-[120px] py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'talents' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
             >
               <Compass size={16} />
               Find Talents
             </button>
             <button
               onClick={() => setActiveTab('workspace')}
-              className={`flex-1 py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'workspace' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 min-w-[120px] py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'workspace' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
             >
               <Briefcase size={16} />
               My Workspace
@@ -421,19 +422,43 @@ export default function Dashboard() {
                 </span>
               )}
             </button>
+            <button
+              onClick={() => setActiveTab('proposals')}
+              className={`flex-1 min-w-[120px] py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'proposals' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <FileText size={16} />
+              Proposals
+              {myJobs.filter(j => j.bidCount > 0 && j.status === 'open').length > 0 && (
+                <span className="bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full font-bold animate-pulse">
+                  {myJobs.filter(j => j.bidCount > 0 && j.status === 'open').length}
+                </span>
+              )}
+            </button>
           </>
         ) : (
           <>
             <button
               onClick={() => setActiveTab('discover')}
-              className={`flex-1 py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'discover' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 min-w-[120px] py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'discover' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
             >
               <Compass size={16} />
               Explore Jobs
             </button>
             <button
+              onClick={() => setActiveTab('invited')}
+              className={`flex-1 min-w-[120px] py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'invited' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <Sparkles size={16} />
+              Invited
+              {jobs.filter(job => job.invitedFreelancers?.includes(user?.id || user?._id)).length > 0 && (
+                <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full font-bold animate-pulse">
+                  {jobs.filter(job => job.invitedFreelancers?.includes(user?.id || user?._id)).length}
+                </span>
+              )}
+            </button>
+            <button
               onClick={() => setActiveTab('workspace')}
-              className={`flex-1 py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'workspace' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 min-w-[120px] py-3 px-4 font-semibold text-sm rounded-xl flex items-center justify-center gap-2.5 transition-all ${activeTab === 'workspace' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
             >
               <Briefcase size={16} />
               My Workspace
@@ -450,9 +475,14 @@ export default function Dashboard() {
       {/* Tabs Content */}
       {activeTab === 'talents' ? (
         <TalentDirectory />
-      ) : activeTab === 'discover' ? (
-        // Explore/Discover Tab
-        loading ? (
+      ) : activeTab === 'discover' || activeTab === 'invited' ? (
+        // Explore/Discover/Invited Tab
+        (() => {
+          const displayedJobs = activeTab === 'invited' 
+            ? jobs.filter(job => job.invitedFreelancers?.includes(user?.id || user?._id))
+            : jobs;
+            
+          return loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map(i => (
               <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between h-64 animate-pulse">
@@ -469,13 +499,15 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        ) : jobs.length === 0 ? (
+        ) : displayedJobs.length === 0 ? (
           <div className="text-center py-20 text-slate-500 bg-white border border-dashed rounded-3xl p-10">
-            No open jobs available on the platform right now. Check back soon!
+            {activeTab === 'invited' 
+              ? "You haven't been invited to any jobs yet. Keep your profile updated to attract clients!" 
+              : "No open jobs available on the platform right now. Check back soon!"}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jobs.map((job, index) => (
+            {displayedJobs.map((job, index) => (
               <motion.div
                 key={job._id}
                 initial={{ opacity: 0, y: 15 }}
@@ -535,10 +567,16 @@ export default function Dashboard() {
               </motion.div>
             ))}
           </div>
-        )
+        );
+        })()
       ) : (
-        // Workspace Tab
-        loadingMyJobs ? (
+        // Workspace/Proposals Tab
+        (() => {
+          const displayedMyJobs = activeTab === 'proposals'
+            ? myJobs.filter(job => job.bidCount > 0 && job.status === 'open')
+            : myJobs;
+            
+          return loadingMyJobs ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {[1, 2].map(i => (
               <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between h-48 animate-pulse">
@@ -551,14 +589,16 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        ) : myJobs.length === 0 ? (
+        ) : displayedMyJobs.length === 0 ? (
           <div className="text-center py-20 text-slate-500 bg-white border border-dashed rounded-3xl p-10">
-            No active jobs in your workspace. 
-            {user?.role === 'freelancer' ? ' Find an interesting job and submit a bid!' : ' Post a job and accept freelancer proposals.'}
+            {activeTab === 'proposals'
+              ? "None of your open jobs have received proposals yet."
+              : `No active jobs in your workspace. ${user?.role === 'freelancer' ? ' Find an interesting job and submit a bid!' : ' Post a job and accept freelancer proposals.'}`
+            }
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {myJobs.map((job) => {
+            {displayedMyJobs.map((job) => {
               // Determine status colors
               let statusBg = 'bg-slate-100 text-slate-600';
               let statusText = job.status.toUpperCase();
@@ -794,7 +834,8 @@ export default function Dashboard() {
               );
             })}
           </div>
-        )
+        );
+        })()
       )}
 
       {/* Post Job Modal */}

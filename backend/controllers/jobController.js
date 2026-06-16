@@ -50,8 +50,15 @@ exports.getJobs = async (req, res) => {
 exports.getMyJobs = async (req, res) => {
   try {
     if (req.user.role === 'client') {
-      const jobs = await Job.find({ client: req.user.id }).populate('selectedFreelancer', 'name email').sort({ createdAt: -1 });
-      res.json(jobs);
+      const jobs = await Job.find({ client: req.user.id }).populate('selectedFreelancer', 'name email').sort({ createdAt: -1 }).lean();
+      
+      // Attach bid count to each job
+      const jobsWithBids = await Promise.all(jobs.map(async (job) => {
+        const bidCount = await Bid.countDocuments({ job: job._id });
+        return { ...job, bidCount };
+      }));
+      
+      res.json(jobsWithBids);
     } else {
       const bids = await Bid.find({ freelancer: req.user.id }).populate({
         path: 'job',
@@ -372,8 +379,8 @@ exports.updateBid = async (req, res) => {
       return res.status(400).json({ message: 'Job is no longer open for bidding' });
     }
 
-    if (amount <= job.budget) {
-      return res.status(400).json({ message: `Bid price must be greater than target budget (₹${job.budget})` });
+    if (amount <= 0) {
+      return res.status(400).json({ message: 'Bid price must be a valid number greater than 0.' });
     }
 
     if (amount) bid.amount = amount;

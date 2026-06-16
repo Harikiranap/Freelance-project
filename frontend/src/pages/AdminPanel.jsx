@@ -19,7 +19,9 @@ import {
   FileText,
   Menu,
   AlertCircle,
-  MessageSquare
+  MessageSquare,
+  MapPin,
+  ExternalLink
 } from 'lucide-react';
 import Loading from '../components/Loading';
 import AdminLiveChats from '../components/AdminLiveChats';
@@ -53,6 +55,10 @@ export default function AdminPanel() {
 
   // Admin Rating Modal State
   const [ratingModal, setRatingModal] = useState({ isOpen: false, freelancerId: null, rating: 5 });
+
+  // Review Modals State
+  const [reviewFreelancerModal, setReviewFreelancerModal] = useState({ isOpen: false, freelancer: null });
+  const [reviewJobModal, setReviewJobModal] = useState({ isOpen: false, job: null });
 
   // Contact Messages State
   const [contactMessages, setContactMessages] = useState([]);
@@ -1120,10 +1126,10 @@ export default function AdminPanel() {
                                   {u.role === 'freelancer' && (
                                     !u.isFreelancerApproved ? (
                                       <button 
-                                        onClick={() => setRatingModal({ isOpen: true, freelancerId: u._id, rating: 5 })} 
+                                        onClick={() => setReviewFreelancerModal({ isOpen: true, freelancer: u })} 
                                         className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1"
                                       >
-                                        Approve Account
+                                        Review Profile
                                       </button>
                                     ) : (
                                       <button 
@@ -1257,10 +1263,10 @@ export default function AdminPanel() {
                                 <div className="flex items-center justify-center gap-2">
                                   {!j.isApproved && (
                                     <button 
-                                      onClick={() => approveJob(j._id)} 
+                                      onClick={() => setReviewJobModal({ isOpen: true, job: j })} 
                                       className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1"
                                     >
-                                      Approve & Publish
+                                      Review Job
                                     </button>
                                   )}
                                   
@@ -1830,6 +1836,184 @@ export default function AdminPanel() {
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-colors"
                 >
                   Send Reply
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Review Freelancer Modal */}
+      <AnimatePresence>
+        {reviewFreelancerModal.isOpen && reviewFreelancerModal.freelancer && (
+          <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                  <UserCheck className="text-emerald-500" size={24} />
+                  Review Freelancer Profile
+                </h3>
+                <button
+                  onClick={() => setReviewFreelancerModal({ isOpen: false, freelancer: null })}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
+                >
+                  <XCircle size={24} />
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto custom-scrollbar space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-100 to-emerald-100 border border-slate-200 flex flex-shrink-0 items-center justify-center font-black text-slate-600 text-2xl uppercase shadow-sm">
+                    {reviewFreelancerModal.freelancer.name.substring(0, 2)}
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-slate-900">{reviewFreelancerModal.freelancer.name}</h4>
+                    <p className="text-sm font-semibold text-slate-500">{reviewFreelancerModal.freelancer.email} • {reviewFreelancerModal.freelancer.phoneNumber || 'No phone provided'}</p>
+                    <p className="text-xs text-slate-400 mt-1 flex items-center gap-1"><MapPin size={12} /> {reviewFreelancerModal.freelancer.location || 'Location Not Specified'}</p>
+                  </div>
+                  <div className="ml-auto text-right">
+                    <span className="inline-block px-3 py-1 bg-slate-100 text-slate-600 font-bold rounded-full text-xs">
+                      Profile Score: {reviewFreelancerModal.freelancer.profileCompleteness || 0}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 border border-slate-100 rounded-2xl bg-slate-50/50">
+                    <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Professional Experience</h5>
+                    <p className="text-base font-semibold text-slate-800">{reviewFreelancerModal.freelancer.experience} Years</p>
+                  </div>
+                  <div className="p-4 border border-slate-100 rounded-2xl bg-slate-50/50">
+                    <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">External Portfolio</h5>
+                    {reviewFreelancerModal.freelancer.portfolioUrl ? (
+                      <a href={reviewFreelancerModal.freelancer.portfolioUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-blue-600 hover:text-blue-800 underline flex items-center gap-1">
+                        View Portfolio <ExternalLink size={14} />
+                      </a>
+                    ) : (
+                      <span className="text-sm text-slate-400 italic">Not provided</span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h5 className="text-sm font-bold text-slate-800 mb-2">Claimed Skills</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {reviewFreelancerModal.freelancer.skills?.map(skill => (
+                      <span key={skill} className="px-3 py-1 bg-blue-50 text-blue-700 font-semibold text-xs rounded-full border border-blue-100">
+                        {skill}
+                      </span>
+                    ))}
+                    {(!reviewFreelancerModal.freelancer.skills || reviewFreelancerModal.freelancer.skills.length === 0) && (
+                      <span className="text-xs text-slate-400 italic">No skills listed</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                <button
+                  onClick={() => setReviewFreelancerModal({ isOpen: false, freelancer: null })}
+                  className="px-6 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setRatingModal({ isOpen: true, freelancerId: reviewFreelancerModal.freelancer._id, rating: 5 });
+                    setReviewFreelancerModal({ isOpen: false, freelancer: null });
+                  }}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-colors shadow-sm flex items-center gap-2"
+                >
+                  Proceed to Approve & Rate
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Review Job Modal */}
+      <AnimatePresence>
+        {reviewJobModal.isOpen && reviewJobModal.job && (
+          <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                  <Briefcase className="text-blue-500" size={24} />
+                  Review Job Posting
+                </h3>
+                <button
+                  onClick={() => setReviewJobModal({ isOpen: false, job: null })}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
+                >
+                  <XCircle size={24} />
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto custom-scrollbar space-y-6">
+                <div>
+                  <h4 className="text-xl font-extrabold text-slate-900 mb-2">{reviewJobModal.job.title}</h4>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-black">
+                    <DollarSign size={16} /> Target Budget: ₹{reviewJobModal.job.budget?.toLocaleString('en-IN')}
+                  </div>
+                </div>
+
+                <div className="p-5 border border-slate-100 rounded-2xl bg-slate-50/50">
+                  <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Job Description</h5>
+                  <p className="text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-wrap">
+                    {reviewJobModal.job.description}
+                  </p>
+                </div>
+
+                <div>
+                  <h5 className="text-sm font-bold text-slate-800 mb-2">Required Skills</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {reviewJobModal.job.skills?.map(skill => (
+                      <span key={skill} className="px-3 py-1 bg-indigo-50 text-indigo-700 font-semibold text-xs rounded-full border border-indigo-100">
+                        {skill}
+                      </span>
+                    ))}
+                    {(!reviewJobModal.job.skills || reviewJobModal.job.skills.length === 0) && (
+                      <span className="text-xs text-slate-400 italic">No specific skills listed</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-4 border border-blue-100 bg-blue-50/30 rounded-2xl flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                    {reviewJobModal.job.client?.name?.substring(0,2).toUpperCase() || 'CL'}
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-0.5">Posted By Client</h5>
+                    <p className="text-base font-bold text-slate-800">{reviewJobModal.job.client?.name || 'Unknown Client'}</p>
+                    {reviewJobModal.job.client?.companyName && (
+                      <p className="text-xs font-medium text-slate-500">{reviewJobModal.job.client.companyName}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                <button
+                  onClick={() => setReviewJobModal({ isOpen: false, job: null })}
+                  className="px-6 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-sm transition-colors"
+                >
+                  Reject / Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    approveJob(reviewJobModal.job._id);
+                    setReviewJobModal({ isOpen: false, job: null });
+                  }}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors shadow-sm flex items-center gap-2"
+                >
+                  <CheckCircle size={18} /> Approve & Publish Job
                 </button>
               </div>
             </motion.div>

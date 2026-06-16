@@ -157,7 +157,7 @@ exports.googleLogin = async (req, res) => {
 
 exports.completeProfile = async (req, res) => {
   try {
-    const { skills, portfolioUrl, phoneNumber, upiId, bankAccount } = req.body;
+    const { skills, portfolioUrl, phoneNumber, upiId, bankAccount, location } = req.body;
     const user = await User.findById(req.user.id);
 
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -165,6 +165,7 @@ exports.completeProfile = async (req, res) => {
     user.skills = skills || user.skills;
     user.portfolioUrl = portfolioUrl;
     user.phoneNumber = phoneNumber;
+    if (location) user.location = location;
     if (upiId) user.upiId = encrypt(upiId);
     if (bankAccount) user.bankAccount = encrypt(bankAccount);
     
@@ -221,12 +222,13 @@ exports.googleComplete = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { companyName, phoneNumber, skills, portfolioUrl } = req.body;
+    const { companyName, phoneNumber, skills, portfolioUrl, location } = req.body;
     const user = await User.findById(req.user.id);
 
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (location) user.location = location;
     
     if (user.role === 'client') {
       if (companyName) user.companyName = companyName;

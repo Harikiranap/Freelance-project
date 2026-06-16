@@ -22,6 +22,7 @@ export default function JobDetails() {
   // Bidding Form State for Freelancers
   const [bidAmount, setBidAmount] = useState('');
   const [proposal, setProposal] = useState('');
+  const [bidMode, setBidMode] = useState(null); // 'accept' | 'custom' | null
   const [biddingOn, setBiddingOn] = useState(null);
   const [selectedBid, setSelectedBid] = useState(null);
 
@@ -76,8 +77,8 @@ export default function JobDetails() {
       toast.error('Please enter a bid amount and proposal.');
       return;
     }
-    if (Number(bidAmount) <= job.budget) {
-      toast.error('Your bid amount must be greater than the job budget price.');
+    if (Number(bidAmount) <= 0) {
+      toast.error('Your bid amount must be a valid number greater than 0.');
       return;
     }
     setConfirmAction({
@@ -320,21 +321,72 @@ export default function JobDetails() {
                       <CheckCircle2 size={24} />
                       You have already submitted a proposal for this job.
                     </div>
+                  ) : !bidMode ? (
+                    <div className="flex flex-col gap-3">
+                      <button 
+                        onClick={() => {
+                          setBidAmount(job.budget.toString());
+                          setProposal("I accept your target budget and project terms. I am ready to begin working immediately.");
+                          setBidMode('accept');
+                        }}
+                        className="w-full py-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-extrabold rounded-xl transition-all shadow-sm flex flex-col items-center justify-center gap-1"
+                      >
+                        <span className="flex items-center gap-2"><CheckCircle2 size={18} /> Accept Project Budget</span>
+                        <span className="text-xs font-semibold text-emerald-600">Instantly bid ₹{job.budget?.toLocaleString('en-IN')}</span>
+                      </button>
+                      
+                      <div className="relative flex items-center py-2">
+                        <div className="flex-grow border-t border-slate-200"></div>
+                        <span className="flex-shrink-0 mx-4 text-slate-400 text-xs font-bold uppercase">Or</span>
+                        <div className="flex-grow border-t border-slate-200"></div>
+                      </div>
+                      
+                      <button 
+                        onClick={() => {
+                          setBidAmount('');
+                          setProposal('');
+                          setBidMode('custom');
+                        }}
+                        className="w-full py-3.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
+                      >
+                        Submit Custom Proposal
+                      </button>
+                    </div>
                   ) : (
                     <>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
-                        <input 
-                          type="number" 
-                          placeholder={`Bid Price (Must be > ₹${job.budget?.toLocaleString('en-IN')})`} 
-                          className="w-full pl-8 pr-4 py-3 border border-blue-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm font-semibold text-blue-700"
-                          onChange={(e) => setBidAmount(e.target.value)}
-                          value={bidAmount}
-                        />
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-bold text-sm text-slate-700">
+                          {bidMode === 'accept' ? 'Accepting Target Budget' : 'Custom Proposal'}
+                        </h3>
+                        <button 
+                          onClick={() => setBidMode(null)}
+                          className="text-[10px] text-slate-400 hover:text-slate-600 font-bold underline"
+                        >
+                          Change Option
+                        </button>
                       </div>
+                      
+                      {bidMode === 'custom' ? (
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                          <input 
+                            type="number" 
+                            placeholder="Enter your custom bid amount" 
+                            className="w-full pl-8 pr-4 py-3 border border-blue-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm font-semibold text-blue-700"
+                            onChange={(e) => setBidAmount(e.target.value)}
+                            value={bidAmount}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full px-4 py-3 border border-emerald-200 rounded-xl bg-emerald-50/50 text-emerald-700 text-sm shadow-sm font-bold flex justify-between items-center">
+                          <span>Accepted Budget:</span>
+                          <span className="text-lg">₹{job.budget?.toLocaleString('en-IN')}</span>
+                        </div>
+                      )}
+                      
                       <textarea 
-                        placeholder="Why are you the best fit for this project?" 
-                        className="w-full px-4 py-3 border border-blue-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none h-32 shadow-sm leading-relaxed"
+                        placeholder={bidMode === 'accept' ? "Add an optional message..." : "Why are you the best fit for this project?"} 
+                        className="w-full mt-3 px-4 py-3 border border-blue-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none h-32 shadow-sm leading-relaxed"
                         onChange={(e) => setProposal(e.target.value)}
                         value={proposal}
                       ></textarea>
