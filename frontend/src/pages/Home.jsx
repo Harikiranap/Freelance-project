@@ -189,7 +189,11 @@ export default function Home() {
       try {
         const res = await axios.get(import.meta.env.VITE_API_URL + '/api/jobs');
         const fetchedJobs = res.data.jobs ? res.data.jobs : res.data;
-        setJobs(fetchedJobs.slice(0, 6));
+        if (Array.isArray(fetchedJobs)) {
+          setJobs(fetchedJobs.slice(0, 6));
+        } else {
+          setJobs([]);
+        }
       } catch (err) {
         console.error("Failed to load jobs");
       }
@@ -198,10 +202,10 @@ export default function Home() {
   }, []);
 
   const categoriesData = [
-    { name: 'Web Design', icon: <Briefcase size={24} />, desc: 'Next.js, Tailwind layouts, and interactive WebGL assets.', count: '140+ Projects', color: 'from-blue-500 to-indigo-500' },
-    { name: 'Video Editing', icon: <Video size={24} />, desc: 'SaaS promos, corporate reviews, color grading, and SFX.', count: '85+ Projects', color: 'from-slate-500 to-pink-500' },
-    { name: 'Reels Making', icon: <MonitorPlay size={24} />, desc: 'High retention captions, fast-paced transitions, TikTok.', count: '220+ Projects', color: 'from-blue-500 to-purple-500' },
-    { name: 'Copywriting', icon: <FileText size={24} />, desc: 'High-converting ad copies, sales sequences, and blogs.', count: '95+ Projects', color: 'from-slate-500 to-teal-500' },
+    { name: 'Web Design', icon: <Briefcase size={24} />, desc: 'Next.js, Tailwind layouts, and interactive WebGL assets.', shortText: 'UI/UX & Web Dev', hoverText: 'Build responsive, modern interfaces', color: 'from-blue-500 to-indigo-500' },
+    { name: 'Video Editing', icon: <Video size={24} />, desc: 'SaaS promos, corporate reviews, color grading, and SFX.', shortText: 'Motion & Post-Production', hoverText: 'Professional video editing services', color: 'from-slate-500 to-pink-500' },
+    { name: 'Reels Making', icon: <MonitorPlay size={24} />, desc: 'High retention captions, fast-paced transitions, TikTok.', shortText: 'Short-Form Content', hoverText: 'Engaging clips for social media', color: 'from-blue-500 to-purple-500' },
+    { name: 'Copywriting', icon: <FileText size={24} />, desc: 'High-converting ad copies, sales sequences, and blogs.', shortText: 'Sales Copy & Blogs', hoverText: 'Persuasive writing that converts', color: 'from-slate-500 to-teal-500' },
   ];
 
   return (
@@ -301,7 +305,8 @@ export default function Home() {
                     <p className="text-sm text-slate-500 leading-relaxed">{cat.desc}</p>
                   </div>
                   <div className="mt-8 flex justify-between items-center text-sm font-semibold text-slate-400 group-hover:text-blue-600 transition-colors">
-                    <span>{cat.count}</span>
+                    <span className="block group-hover:hidden">{cat.shortText}</span>
+                    <span className="hidden group-hover:block transition-all">{cat.hoverText}</span>
                     <ChevronRight size={18} className="transform group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -330,7 +335,7 @@ export default function Home() {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8 perspective-1000">
-            {jobs.length > 0 ? jobs.map((job, idx) => (
+            {Array.isArray(jobs) && jobs.length > 0 ? jobs.map((job, idx) => (
               <motion.div 
                 initial={{ opacity: 0, rotateX: 10, y: 50 }}
                 whileInView={{ opacity: 1, rotateX: 0, y: 0 }}

@@ -522,3 +522,25 @@ exports.rejectCounterOffer = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.inviteFreelancer = async (req, res) => {
+  try {
+    const { jobId, freelancerId } = req.params;
+    const job = await Job.findById(jobId);
+    
+    if (!job) return res.status(404).json({ message: 'Job not found' });
+    
+    if (job.client.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to invite to this job' });
+    }
+
+    if (!job.invitedFreelancers.includes(freelancerId)) {
+      job.invitedFreelancers.push(freelancerId);
+      await job.save();
+    }
+    
+    res.json({ message: 'Freelancer invited successfully', job });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

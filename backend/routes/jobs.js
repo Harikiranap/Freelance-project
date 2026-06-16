@@ -1,5 +1,5 @@
 const express = require('express');
-const { createJob, getJobs, getMyJobs, getJobMessages, placeBid, acceptBid, getJobBids, deliverJob, getJobById, approveJob, getAiMatches, updateBid, disputeJob, postCounterOffer, acceptCounterOffer, rejectCounterOffer } = require('../controllers/jobController');
+const { createJob, getJobs, getMyJobs, getJobMessages, placeBid, acceptBid, getJobBids, deliverJob, getJobById, approveJob, getAiMatches, updateBid, disputeJob, postCounterOffer, acceptCounterOffer, rejectCounterOffer, inviteFreelancer } = require('../controllers/jobController');
 const { protect, authorize } = require('../middleware/auth');
 const { apiLimiter } = require('../middleware/rateLimiter');
 const { validate, jobSchema } = require('../utils/validators');
@@ -16,6 +16,7 @@ router.get('/:jobId/bids', protect, getJobBids);
 router.get('/:jobId/ai-match', protect, authorize('client'), getAiMatches);
 
 router.post('/:jobId/bid', protect, authorize('freelancer'), apiLimiter, placeBid);
+router.post('/:jobId/invite/:freelancerId', protect, authorize('client'), inviteFreelancer);
 router.post('/:jobId/deliver', protect, authorize('freelancer'), deliverJob);
 router.post('/:jobId/approve', protect, authorize('admin'), approveJob);
 router.post('/bid/:bidId/accept', protect, authorize('client'), acceptBid);

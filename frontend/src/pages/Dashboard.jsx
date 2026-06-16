@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Loader2, MessageSquare, CheckSquare, CreditCard, Landmark, Compass, Briefcase, FileText, Sparkles, BrainCircuit } from 'lucide-react';
+import { Loader2, MessageSquare, CheckSquare, CreditCard, Landmark, Compass, Briefcase, FileText, Sparkles, BrainCircuit, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
 import Avatar from '../components/Avatar';
@@ -16,6 +16,8 @@ export default function Dashboard() {
   
   const [activeTab, setActiveTab] = useState(user?.role === 'client' ? 'talents' : 'discover'); // 'talents', 'discover' or 'workspace'
   const [profile, setProfile] = useState(null);
+  const [invitingState, setInvitingState] = useState({});
+  const [selectedProfile, setSelectedProfile] = useState(null);
   
   // Discover Jobs
   const [jobs, setJobs] = useState([]);
@@ -194,6 +196,23 @@ export default function Dashboard() {
     }
   };
 
+  const handleInviteFreelancer = async (jobId, freelancerId) => {
+    setInvitingState(prev => ({ ...prev, [`${jobId}-${freelancerId}`]: true }));
+    try {
+      const token = user?.token || sessionStorage.getItem('token');
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs/${jobId}/invite/${freelancerId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success("Freelancer invited successfully!");
+      fetchJobs();
+      fetchMyJobs();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to invite freelancer');
+    } finally {
+      setInvitingState(prev => ({ ...prev, [`${jobId}-${freelancerId}`]: false }));
+    }
+  };
+
   // Removed executeBid from dashboard. Now handled in JobDetails.
 
   const fetchJobBids = async (job) => {
@@ -213,7 +232,7 @@ export default function Dashboard() {
   const handleAcceptBidClick = (bidId, amount, freelancerName) => {
     triggerConfirm(
       "Accept Bid & Hire",
-      `Are you sure continuing to accept this bid of ₹${amount} and hire ${freelancerName}?`,
+      `Are you sure continuing to accept this bid of ₹${Number(amount).toLocaleString('en-IN')} and hire ${freelancerName}?`,
       () => executeAcceptBid(bidId, amount)
     );
   };
@@ -226,7 +245,7 @@ export default function Dashboard() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      toast.success(`Bid accepted successfully! Contract created for ₹${amount}`);
+      toast.success(`Bid accepted successfully! Contract created for ₹${Number(amount).toLocaleString('en-IN')}`);
       setViewingBidsJob(null);
       fetchJobs();
       fetchMyJobs();
@@ -465,11 +484,16 @@ export default function Dashboard() {
                 className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between h-full group hover:shadow-xl transition-all"
               >
                 <div>
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-start mb-4">
                     <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
                       OPEN FOR BIDS
                     </span>
-                    <span className="text-lg font-bold text-slate-900">₹{job.budget}</span>
+                    {user?.role === 'freelancer' && job.invitedFreelancers?.includes(user?.id || user?._id) && (
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 ml-2 shadow-sm border border-purple-200 animate-pulse">
+                        ⭐ INVITED
+                      </span>
+                    )}
+                    <span className="text-lg font-bold text-slate-900 ml-auto">₹{job.budget?.toLocaleString('en-IN')}</span>
                   </div>
                   
                   <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">{job.title}</h3>
@@ -573,7 +597,7 @@ export default function Dashboard() {
                       </span>
                       <div className="flex items-center gap-1">
                         <span className="text-xs text-slate-400 font-semibold uppercase">Hired Price:</span>
-                        <span className="text-xl font-extrabold text-blue-600">₹{finalPrice}</span>
+                        <span className="text-xl font-extrabold text-blue-600">₹{finalPrice?.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
 
@@ -736,19 +760,27 @@ export default function Dashboard() {
                         <p className="text-xs text-slate-500">No matching freelancers found for these skills.</p>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {aiMatches[job._id].map((match, idx) => (
+                          {aiMatches[job._id].slice(0, 1).map((match, idx) => (
                             <div key={idx} className="bg-white border border-slate-100 rounded-xl p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
-                              <div className="flex items-center gap-3">
-                                <Avatar name={match.freelancer.name} size={36} className="border-slate-100 text-slate-600" />
+                              <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setSelectedProfile(match.freelancer)}>
+                                <Avatar name={match.freelancer.name} size={36} className="border-slate-100 text-slate-600 group-hover:ring-2 ring-blue-500 transition-all" />
                                 <div>
-                                  <div className="font-bold text-sm text-slate-800">{match.freelancer.name}</div>
+                                  <div className="font-bold text-sm text-slate-800 group-hover:text-blue-600 transition-colors">{match.freelancer.name}</div>
                                   <div className="text-[10px] font-semibold text-slate-400">Rating: {match.freelancer.rating} ⭐</div>
                                 </div>
                               </div>
                               <div className="text-right flex flex-col items-end">
                                 <div className="text-sm font-black text-slate-600">{Math.round(match.score * 100)}% Match</div>
-                                <button className="mt-1 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold rounded uppercase transition-colors">
-                                  Invite
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleInviteFreelancer(job._id, match.freelancer._id); }}
+                                  disabled={job.invitedFreelancers?.includes(match.freelancer._id) || invitingState[`${job._id}-${match.freelancer._id}`]}
+                                  className="mt-1 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold rounded uppercase transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {invitingState[`${job._id}-${match.freelancer._id}`] 
+                                    ? 'Sending...' 
+                                    : job.invitedFreelancers?.includes(match.freelancer._id) 
+                                      ? 'Invited' 
+                                      : 'Invite'}
                                 </button>
                               </div>
                             </div>
@@ -905,6 +937,50 @@ export default function Dashboard() {
                 </button>
               </div>
             </form>
+          </motion.div>
+        </div>,
+        document.body
+      )}
+
+      {selectedProfile && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-[500] p-4 backdrop-blur-sm"
+          onClick={() => setSelectedProfile(null)}
+        >
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-100 flex flex-col text-slate-600"
+          >
+            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-base font-bold text-slate-900">Freelancer Profile</h2>
+              <button 
+                onClick={() => setSelectedProfile(null)}
+                className="text-slate-400 hover:text-slate-600 text-sm p-1.5 bg-white hover:bg-slate-100 rounded-full border border-slate-100 transition-colors"
+              >✕</button>
+            </div>
+            <div className="p-6 flex flex-col items-center">
+              <Avatar name={selectedProfile.name} size={80} className="bg-blue-500 text-white font-bold text-2xl mb-4" />
+              <h3 className="font-bold text-xl text-slate-800">{selectedProfile.name}</h3>
+              <div className="flex items-center gap-1 text-sm font-bold text-slate-600 mt-1">
+                <Star size={14} className="text-amber-500 fill-amber-500" />
+                <span>{selectedProfile.rating?.toFixed(1) || '0.0'}</span>
+              </div>
+              {selectedProfile.skills && selectedProfile.skills.length > 0 && (
+                <div className="mt-6 w-full">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase mb-2 text-center">Skills</h4>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {selectedProfile.skills.map(skill => (
+                      <span key={skill} className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold border border-blue-100">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </motion.div>
         </div>,
         document.body

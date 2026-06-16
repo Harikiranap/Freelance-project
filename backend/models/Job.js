@@ -16,6 +16,7 @@ const jobSchema = new mongoose.Schema(
   },
     deliverableLink: { type: String },
     selectedFreelancer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    invitedFreelancers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     acceptedPrice: { type: Number },
     paymentStatus: { type: String, enum: ['pending', 'escrow_funded', 'released', 'refunded'], default: 'pending' },
   },

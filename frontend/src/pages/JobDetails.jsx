@@ -114,7 +114,7 @@ export default function JobDetails() {
     setConfirmAction({
       isOpen: true,
       title: "Accept Proposal",
-      message: `Are you sure you want to hire ${freelancerName} for ₹${amount}? This will take you to the secure payment escrow.`,
+      message: `Are you sure you want to hire ${freelancerName} for ₹${Number(amount).toLocaleString('en-IN')}? This will take you to the secure payment escrow.`,
       onConfirm: () => executeAcceptBid(bidId, amount)
     });
   };
@@ -126,7 +126,7 @@ export default function JobDetails() {
       const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs/bid/${bidId}/accept`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast.success(`Proposal accepted! Proceeding to fund escrow for ₹${amount}`);
+      toast.success(`Proposal accepted! Proceeding to fund escrow for ₹${Number(amount).toLocaleString('en-IN')}`);
       navigate(`/payment/${job._id}`);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to accept proposal');
@@ -156,6 +156,18 @@ export default function JobDetails() {
         onConfirm={confirmAction.onConfirm}
         onCancel={() => setConfirmAction(prev => ({...prev, isOpen: false}))}
       />
+
+      {user?.role === 'freelancer' && job.invitedFreelancers?.includes(user?.id || user?._id) && (
+        <div className="mb-8 bg-gradient-to-r from-purple-100 to-indigo-100 border border-purple-200 rounded-2xl p-4 flex items-center justify-center gap-4 shadow-sm animate-pulse-slow">
+          <div className="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center shadow-md shrink-0">
+            <Star size={20} className="fill-white" />
+          </div>
+          <div className="text-left">
+            <h3 className="text-purple-900 font-bold text-sm">You have been Exclusively Invited!</h3>
+            <p className="text-purple-700 text-xs mt-0.5">The client's AI specifically matched you for this role. Submit a proposal to get started.</p>
+          </div>
+        </div>
+      )}
 
       {/* Header Section */}
       <div className="text-center mb-10">
@@ -219,7 +231,7 @@ export default function JobDetails() {
                   <div className="bg-emerald-50 p-2 rounded-full text-emerald-500 font-bold text-sm flex items-center justify-center w-8 h-8">₹</div>
                   <div>
                     <div className="text-[10px] uppercase font-bold text-slate-400">Project Budget</div>
-                    <div className="text-sm font-black text-emerald-600">₹{job.budget}</div>
+                    <div className="text-sm font-black text-emerald-600">₹{job.budget?.toLocaleString('en-IN')}</div>
                   </div>
                 </div>
               </div>
@@ -314,7 +326,7 @@ export default function JobDetails() {
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
                         <input 
                           type="number" 
-                          placeholder={`Bid Price (Must be > ₹${job.budget})`} 
+                          placeholder={`Bid Price (Must be > ₹${job.budget?.toLocaleString('en-IN')})`} 
                           className="w-full pl-8 pr-4 py-3 border border-blue-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm font-semibold text-blue-700"
                           onChange={(e) => setBidAmount(e.target.value)}
                           value={bidAmount}
