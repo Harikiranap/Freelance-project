@@ -35,38 +35,56 @@ export default function Breadcrumbs() {
           Home
         </Link>
         
-        {pathnames.map((value, index) => {
-          const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-          const isLast = index === pathnames.length - 1;
-          
-          // Try to get a friendly label, otherwise capitalize the path segment
-          // Also check if it's a dynamic ID (e.g., job ID which is long and alphanumeric)
-          let label = routeLabels[value] || value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, ' ');
-          
-          // If the value is a long ID, shorten it
-          if (value.length > 20) {
-            label = `ID: ${value.substring(0, 8)}...`;
+        {(() => {
+          // Custom breadcrumb structures for specific dynamic routes
+          if (pathnames[0] === 'job') {
+            return (
+              <>
+                <ChevronRight size={16} className="mx-2 text-slate-400 flex-shrink-0" />
+                <Link to="/dashboard" className="text-slate-500 hover:text-blue-600 transition-colors font-medium truncate max-w-[150px]">Jobs</Link>
+                <ChevronRight size={16} className="mx-2 text-slate-400 flex-shrink-0" />
+                <span className="text-slate-900 font-bold truncate max-w-[200px]">Job Details</span>
+              </>
+            );
+          }
+          if (pathnames[0] === 'payment') {
+            return (
+              <>
+                <ChevronRight size={16} className="mx-2 text-slate-400 flex-shrink-0" />
+                <Link to="/dashboard" className="text-slate-500 hover:text-blue-600 transition-colors font-medium truncate max-w-[150px]">Jobs</Link>
+                <ChevronRight size={16} className="mx-2 text-slate-400 flex-shrink-0" />
+                <span className="text-slate-900 font-bold truncate max-w-[200px]">Secure Payment</span>
+              </>
+            );
           }
 
-          return (
-            <React.Fragment key={to}>
-              <ChevronRight size={16} className="mx-2 text-slate-400 flex-shrink-0" />
-              {isLast ? (
-                <span className="text-slate-900 font-bold truncate max-w-[200px]" title={value}>
-                  {label}
-                </span>
-              ) : (
-                <Link 
-                  to={to} 
-                  className="text-slate-500 hover:text-blue-600 transition-colors font-medium truncate max-w-[150px]"
-                  title={value}
-                >
-                  {label}
-                </Link>
-              )}
-            </React.Fragment>
-          );
-        })}
+          // Default breadcrumb generation for standard routes
+          return pathnames.map((value, index) => {
+            const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+            const isLast = index === pathnames.length - 1;
+            
+            let label = routeLabels[value] || value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, ' ');
+            
+            return (
+              <React.Fragment key={to}>
+                <ChevronRight size={16} className="mx-2 text-slate-400 flex-shrink-0" />
+                {isLast ? (
+                  <span className="text-slate-900 font-bold truncate max-w-[200px]" title={value}>
+                    {label}
+                  </span>
+                ) : (
+                  <Link 
+                    to={to} 
+                    className="text-slate-500 hover:text-blue-600 transition-colors font-medium truncate max-w-[150px]"
+                    title={value}
+                  >
+                    {label}
+                  </Link>
+                )}
+              </React.Fragment>
+            );
+          });
+        })()}
       </div>
     </div>
   );

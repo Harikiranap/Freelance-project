@@ -11,6 +11,7 @@ import Avatar from './components/Avatar';
 import AuthModal from './components/AuthModal';
 import Footer from './components/Footer';
 import ContactUs from './components/ContactUs';
+import Breadcrumbs from './components/Breadcrumbs';
 const Home = lazy(() => import('./pages/Home'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Chat = lazy(() => import('./pages/Chat'));
@@ -345,6 +346,7 @@ function AppContent() {
       <AuthModal />
       <SmoothScroll>
         <div className={`pt-16 flex flex-col min-h-screen ${isAdmin ? 'h-[calc(100vh-64px)] overflow-hidden' : ''}`}>
+          {!isAdmin && <Breadcrumbs />}
           <AppRoutes />
           {!isAdmin && <ContactUs />}
           {!isAdmin && <Footer />}
