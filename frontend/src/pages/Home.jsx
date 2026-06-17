@@ -442,19 +442,7 @@ export default function Home() {
                     </h3>
                     
                     <div className="space-y-6">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Project Category</label>
-                        <select 
-                          value={estimateCategory} 
-                          onChange={(e) => setEstimateCategory(e.target.value)}
-                          className="w-full px-5 py-4 bg-white/80 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-500 font-bold text-slate-800 shadow-sm transition-colors cursor-pointer appearance-none"
-                        >
-                          <option value="Web Design">Web Design & Dev</option>
-                          <option value="Video Editing">Video Editing</option>
-                          <option value="Reels Making">Reels & TikTok Editing</option>
-                          <option value="Copywriting">Copywriting & Blogs</option>
-                        </select>
-                      </div>
+                      
 
                       <div>
                         <div className="flex justify-between items-center mb-4">
